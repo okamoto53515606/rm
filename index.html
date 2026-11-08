@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#08080a" />
+    <meta name="description" content="写真の顔・ナンバープレート・APIキーなどを隠せる無料ツール。既定は完全ローカル（無通信）で、文字の自動検出を使うときだけ選んだAIに画像を渡します。" />
+    <title>rm — 写真の顔・ナンバー・秘密をブラウザで隠す</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="./">
+        <img src="./favicon.svg" alt="" width="28" height="28" />
+        <span>rm</span>
+      </a>
+      <span class="badge">既定は完全ローカル</span>
+      <span class="tagline">写真の顔・ナンバープレート・APIキーを隠すツール</span>
+      <div class="spacer"></div>
+      <button class="link" id="btnHelp" type="button">使い方と安全性</button>
+      <a class="link" href="./terms.html" target="_blank" rel="noopener">利用規約</a>
+      <a class="link" href="./privacy.html" target="_blank" rel="noopener">プライバシー</a>
+    </header>
+
+    <main class="layout">
+      <!-- 左：写真一覧 -->
+      <aside class="sidebar">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="写真を追加">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M12 16V4m0 0L8 8m4-4 4 4" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke-linecap="round" />
+          </svg>
+          <strong>写真をドロップ</strong>
+          <span>クリックで選択 / Ctrl+V で貼り付け</span>
+          <span class="formats">JPEG・PNG・WebP・GIF・HEIC</span>
+          <input id="fileInput" type="file" accept="image/*,.heic,.heif" multiple hidden />
+        </div>
+
+        <div class="list-head">
+          <span id="photoCount">0 枚</span>
+          <button class="link small" id="btnClearAll" type="button">すべて削除</button>
+        </div>
+        <ul class="photo-list" id="photoList"></ul>
+      </aside>
+
+      <!-- 中央：エディタ -->
+      <section class="editor">
+        <div class="toolbar">
+          <div class="tool-group" role="group" aria-label="描画ツール">
+            <button type="button" class="tool is-active" data-tool="select" title="選択・移動 (V)">選択</button>
+            <button type="button" class="tool" data-tool="rect" title="矩形 (R)">矩形</button>
+            <button type="button" class="tool" data-tool="ellipse" title="楕円 (E)">楕円</button>
+            <button type="button" class="tool" data-tool="polygon" title="多角形 (P)">多角形</button>
+          </div>
+
+          <label class="field inline">
+            <span>隠し方</span>
+            <select id="effectSelect">
+              <option value="mosaic+blur">モザイク＋ぼかし（推奨）</option>
+              <option value="mosaic">モザイクのみ</option>
+              <option value="blur">ぼかしのみ</option>
+              <option value="fill">黒く塗りつぶし（最強）</option>
+            </select>
+          </label>
+
+          <div class="spacer"></div>
+          <button type="button" class="tool" id="btnUndo" title="元に戻す (Ctrl+Z)">元に戻す</button>
+          <button type="button" class="tool danger" id="btnDelete" title="選択中の範囲を削除 (Delete)">削除</button>
+        </div>
+
+        <div class="canvas-wrap">
+          <div class="canvas-host" id="canvasHost"></div>
+          <div class="empty-state" id="emptyState">
+            <p>写真を追加すると、ここでマスク範囲を編集できます。</p>
+            <p class="muted">写真はこのブラウザの中だけで処理されます。</p>
+          </div>
+        </div>
+
+        <div class="statusbar">
+          <span id="statusText">待機中</span>
+          <label class="check" id="verifiedWrap" hidden>
+            <input type="checkbox" id="chkVerified" /> この写真は確認済み
+          </label>
+          <div class="progress" id="progressBar" hidden><i></i></div>
+        </div>
+      </section>
+
+      <!-- 右：検出と書き出し -->
+      <aside class="rightbar">
+        <section class="panel">
+          <h2>自動検出</h2>
+          <label class="field">
+            <span>検出方法</span>
+            <select id="selProvider">
+              <option value="local" selected>ブラウザ内（無通信）</option>
+              <option value="gemini">Gemini API（顔・ナンバー・秘密・ユーザー名/パス）</option>
+              <option value="ollama">Ollama（ローカルLLM・実験的）</option>
+            </select>
+          </label>
+          <p class="note warn" id="externalWarning" hidden></p>
+          <p class="note" id="providerNote">自動検出は 顔・ナンバープレート・APIキー・氏名/連絡先・ユーザー名/パス などを探します。文字の検出には Gemini / Ollama、またはローカルOCRを使います。</p>
+
+          <div id="refineFields">
+            <label class="check"><input type="checkbox" id="chkFaceRefine" checked /> 顔の枠をブラウザ検出で補正</label>
+            <p class="note">Gemini / Ollama の顔の枠を、端末内の顔検出（478点）でぴったりに合わせ直します。初回のみ顔モデルを読み込みます。</p>
+          </div>
+
+          <div id="ocrFields" hidden>
+            <label class="check"><input type="checkbox" id="chkLocalOcr" /> 文字も検出（OCR・無通信）</label>
+            <p class="note">初回のみOCRデータ約18MB（顔モデルと合わせて約38MB）を読み込みます。1枚2〜4秒。APIキー・メール・パス・端末プロンプトを正規表現で探します。ナンバープレートは、写真の中の明るい四角を探してその部分を拡大し、番号が読めたときに隠します。</p>
+          </div>
+
+          <div id="geminiFields">
+            <label class="field">
+              <span>Gemini API キー</span>
+              <input id="geminiKey" type="password" placeholder="AIza..." autocomplete="off" spellcheck="false" />
+            </label>
+            <p class="note">キーは保存しません（再読み込みで消えます）。画像はこの操作のときだけ Google に送信されます。</p>
+          </div>
+
+          <div id="ollamaFields" hidden>
+            <label class="field">
+              <span>Ollama エンドポイント</span>
+              <input id="ollamaEndpoint" type="text" value="http://localhost:11434" spellcheck="false" />
+            </label>
+            <label class="field">
+              <span>モデル名</span>
+              <input id="ollamaModel" type="text" value="qwen2.5vl:7b" spellcheck="false" />
+            </label>
+            <p class="note" id="ollamaHint"></p>
+            <p class="note"><a href="./terms.html#ollama" target="_blank" rel="noopener">Ollama の設定手順</a></p>
+          </div>
+
+          <div class="row">
+            <button class="primary" id="btnDetectCurrent" type="button">この写真を検出</button>
+            <button class="secondary" id="btnDetectAll" type="button">すべて検出</button>
+          </div>
+          <p class="note" id="detectStatus"></p>
+        </section>
+
+        <section class="panel">
+          <h2>書き出し</h2>
+          <label class="field">
+            <span>長辺の上限</span>
+            <select id="expMaxSide">
+              <option value="2000">2000px（推奨）</option>
+              <option value="1600">1600px</option>
+              <option value="1280">1280px</option>
+              <option value="1024">1024px</option>
+              <option value="0">元のサイズのまま</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>JPEG 品質</span>
+            <select id="expQuality">
+              <option value="0.92">高（0.92）</option>
+              <option value="0.86" selected>標準（0.86）</option>
+              <option value="0.78">軽量（0.78）</option>
+            </select>
+          </label>
+          <p class="note">JPEG に統一し、位置情報などの EXIF は削除して書き出します。</p>
+          <button class="primary wide" id="btnExport" type="button">マスクして保存</button>
+          <p class="note" id="exportStatus"></p>
+        </section>
+
+        <section class="panel tips">
+          <h2>プライバシー</h2>
+          <ul>
+            <li>画像が当サイトのサーバーに送られることはありません。</li>
+            <li>Gemini 利用時のみ、画像が Google に送信されます。</li>
+            <li>API キーは保存せず、当サイトにも送りません。</li>
+            <li>アクセス解析・Cookie・外部フォントは不使用です。</li>
+          </ul>
+          <p class="note">AI の検出は 100% ではありません。公開前の目視確認をおすすめします。</p>
+        </section>
+      </aside>
+    </main>
+
+    <dialog id="helpDialog" class="dialog">
+      <form method="dialog">
+        <h2>使い方と安全性</h2>
+        <ol>
+          <li>写真をドラッグ＆ドロップ（または Ctrl+V）で追加します。</li>
+          <li>「自動検出」で顔・ナンバープレート・機密文字列に加え、ターミナルのユーザー名・ホスト名・フォルダパスも候補として出します。API キーが不要なのは「ブラウザ内」です。「文字も検出（OCR）」にチェックすると、APIキーなども無通信で探せます。</li>
+          <li>枠をドラッグして位置と大きさを直します。四隅のハンドルでリサイズ、Delete で削除、Ctrl+Z で元に戻せます。</li>
+          <li>「枠を隠して確認」で隠れ方を確認し、確認済みにチェックします。</li>
+          <li>「マスクして保存」で JPEG 書き出し（複数枚は ZIP）。</li>
+        </ol>
+        <h3>データの行き先</h3>
+        <ul>
+          <li><strong>ブラウザ内（顔のみ）</strong>: 画像は端末から出ません。</li>
+          <li><strong>Gemini</strong>: 検出を実行したときだけ、縮小した画像を Google に送信します。API キーはブラウザから Google へ直接送られ、当サイトのサーバーは関与しません。</li>
+          <li><strong>Ollama</strong>: 指定したエンドポイント（通常は自分の PC）にのみ送信します。</li>
+        </ul>
+        <h3>できないこと・注意</h3>
+        <ul>
+          <li>AI の検出漏れはあります。確認済みチェックは「人が見た」印です。</li>
+          <li>HEIC は変換に対応していますが、端末やブラウザによっては失敗することがあります。</li>
+          <li>GIF は先頭フレームのみを読み込みます（アニメーションは保持されません）。</li>
+          <li>あまりに大量・高解像度の写真を一度に処理すると、ブラウザのメモリ不足で失敗することがあります。</li>
+        </ul>
+        <div class="dialog-actions"><button class="primary" value="close">閉じる</button></div>
+      </form>
+    </dialog>
+
+    <footer class="footer">
+      <span class="muted">© 2026 QuickWork. All Rights Reserved.</span>
+    </footer>
+
+    <dialog id="confirmDialog" class="dialog">
+      <div class="dialog-body">
+        <h2 id="confirmTitle"></h2>
+        <p id="confirmMessage" class="confirm-message"></p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="confirmCancel">キャンセル</button>
+          <button type="button" class="primary" id="confirmOk">OK</button>
+        </div>
+      </div>
+    </dialog>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

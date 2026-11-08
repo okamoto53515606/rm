@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- ひし形の外側を白くして、黒いひし形をはっきり見せる -->
+  <rect width="100" height="100" fill="#ffffff"/>
+  <path d="M50 3 L97 50 L50 97 L3 50 Z" fill="#0a0a0a" stroke="#0a0a0a" stroke-width="2" stroke-linejoin="round"/>
+  <text x="50" y="36" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">r</text>
+  <text x="50" y="62" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="central">m</text>
+</svg>

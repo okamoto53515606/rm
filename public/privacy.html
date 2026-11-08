@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>プライバシーポリシー — rm</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./legal.css" />
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <a href="./">rm</a>
+        <nav>
+          <a href="./terms.html">利用規約</a>
+          <a href="./privacy.html">プライバシー</a>
+          <a href="./">アプリへ戻る</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <main>
+        <h1>プライバシーポリシー</h1>
+        <p class="meta">制定日: 2026年11月8日</p>
+
+        <p class="note">
+          結論: 本サービスは、利用者の画像・API キー・編集内容を収集しません。
+          画像が外部に送信されるのは、利用者が「Gemini」または「Ollama」を選んで検出を実行したときだけです。
+        </p>
+
+        <h2>1. 収集しない情報</h2>
+        <ul>
+          <li>画像データ（本サービスのサーバーには送信されません）</li>
+          <li>Gemini API キー（ブラウザのメモリ上にのみ存在し、保存も送信もしません）</li>
+          <li>マスク範囲・編集内容・書き出した画像</li>
+          <li>Cookie、アクセス解析、広告識別子</li>
+        </ul>
+
+        <h2>2. 画像の処理場所</h2>
+        <ul>
+          <li><strong>ブラウザ内（顔のみ）</strong>: 画像は端末から一歩も出ません。顔検出モデルも本サービスと同じ配信元から読み込みます。</li>
+          <li><strong>Gemini</strong>: 検出を実行したときだけ、長辺 1536px に縮小した JPEG を Google の Gemini API へ送信します。API キーはブラウザから Google へ直接送信され、本サービスのサーバーは関与しません。</li>
+          <li><strong>Ollama</strong>: 利用者が入力したエンドポイント（通常は自分の PC）にのみ送信します。</li>
+        </ul>
+
+        <h2>3. 外部サービスにおける取扱い</h2>
+        <p>
+          Gemini API に送信されたデータは、Google の利用規約およびデータ取扱いポリシーに従って処理されます。
+          無料枠では入力がサービス改善に利用される場合があります。機密性の高い画像を扱う場合は、有料枠の利用や、
+          「ブラウザ内（顔のみ）」の利用を検討してください。
+        </p>
+        <p>
+          本サービスは Google の承認・提携を受けたものではなく、Gemini API を利用者自身のキーで呼び出すだけのツールです。
+        </p>
+
+        <h2>4. サーバーのアクセスログ</h2>
+        <p>
+          本サービスは静的ファイルを Amazon S3 / CloudFront から配信しています。配信基盤は、一般的なウェブアクセスと同様に、
+          IP アドレス・ユーザーエージェント・リクエスト URL などを運用ログとして記録する場合があります。
+          これらに画像の内容や編集内容は含まれません。ログは運用・不正アクセス対策の目的にのみ使用します。
+        </p>
+
+        <h2>5. API キーの管理</h2>
+        <ul>
+          <li>入力された API キーはページのメモリ上にのみ保持し、リロードで消えます。</li>
+          <li>localStorage・Cookie・サーバーには保存しません。</li>
+          <li>キーは Google のエンドポイント以外へ送信しません（CSP により通信先を制限しています）。</li>
+        </ul>
+
+        <h2>6. 第三者提供</h2>
+        <p>本サービスは、利用者の情報を第三者へ販売・提供しません。</p>
+
+        <h2>7. お問い合わせ</h2>
+        <p>
+          本ポリシーに関するお問い合わせは
+          <a href="https://github.com/okamoto53515606/rm/issues" target="_blank" rel="noopener">GitHub Issues</a>
+          へお願いします。
+        </p>
+
+        <h2>8. 改定</h2>
+        <p>本ポリシーを変更する場合は、本ページに掲載した時点で効力を生じます。</p>
+      </main>
+      <footer>© 2026 QuickWork. All Rights Reserved.</footer>
+    </div>
+  </body>
+</html>

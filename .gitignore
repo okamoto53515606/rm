@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.aws-sam/
+.DS_Store
+*.log
+.env
+.env.*
+
+# 出典記事の引用（著作物のためリポジトリに含めない）
+why.txt
+
+# ビルド時に node_modules から複製される資産
+public/wasm/
+public/models/*.task
+public/ocr/

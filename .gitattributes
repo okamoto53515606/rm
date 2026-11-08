@@ -1,0 +1,5 @@
+* text=auto
+
+# シェルスクリプトは改行コードを LF に固定（Windows の clone でも動かすため）
+*.sh text eol=lf
+*.mjs text eol=lf

@@ -1,0 +1,25 @@
+{
+  "name": "rm",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "ブラウザだけで写真の顔・ナンバープレート・機密文字列を隠すツール",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node scripts/prepare-assets.mjs && vite",
+    "build": "node scripts/prepare-assets.mjs && tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "prepare:assets": "node scripts/prepare-assets.mjs"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.2.2",
+    "fflate": "^0.8.3",
+    "heic2any": "^0.0.4",
+    "konva": "^10.9.1",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  }
+}
