@@ -4,7 +4,7 @@
 
 公開: **https://rm.okamomedia.tokyo/** ・ MIT License
 
-[![rm の検出画面](docs/screenshot/kenshutu.png)](https://rm.okamomedia.tokyo/)
+[![rm の検出画面](docs/screenshot/kenshutu_local.png)](https://rm.okamomedia.tokyo/)
 
 既定は**完全ローカル（無通信）**。文字の自動検出を選んだときだけ、画像が Gemini / Ollama に渡ります。
 画像が当サイトのサーバーに送信されることはありません。
@@ -40,7 +40,7 @@
 
 | APIキーの黒塗り | 検出から書き出しまで |
 |---|---|
-| ![APIキーのマスク結果](docs/screenshot/local_result2.jpg) | ![検出画面](docs/screenshot/kenshutu.png) |
+| ![APIキーのマスク結果](docs/screenshot/local_result2.jpg) | ![検出画面](docs/screenshot/kenshutu_local.png) |
 
 未確認のまま書き出そうとすると、目視確認を促す警告が出ます。
 
