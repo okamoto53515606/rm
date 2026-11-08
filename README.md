@@ -42,6 +42,10 @@
 |---|---|
 | ![APIキーのマスク結果](docs/screenshot/local_result2.jpg) | ![検出画面](docs/screenshot/kenshutu.png) |
 
+未確認のまま書き出そうとすると、目視確認を促す警告が出ます。
+
+![未確認のまま書き出すときの警告](docs/screenshot/confirm.png)
+
 ---
 
 ## 使い方
