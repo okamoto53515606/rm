@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#08080a" />
-    <meta name="description" content="写真の顔・ナンバープレート・APIキーなどを隠せる無料ツール。既定は完全ローカル（無通信）で、文字の自動検出を使うときだけ選んだAIに画像を渡します。" />
+    <meta name="description" content="写真の顔・ナンバープレート・APIキーなどを隠せる無料ツール。既定は完全ローカル（無通信）で、顔も文字もブラウザ内で検出します。AI（Gemini / Ollama）を選んだときだけ画像を送信します。" />
     <title>rm — 写真の顔・ナンバー・秘密をブラウザで隠す</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./src/style.css" />
@@ -186,12 +186,12 @@
           <li>写真をドラッグ＆ドロップ（または Ctrl+V）で追加します。</li>
           <li>「自動検出」で顔・ナンバープレート・機密文字列に加え、ターミナルのユーザー名・ホスト名・フォルダパスも候補として出します。API キーが不要なのは「ブラウザ内」です。「文字も検出（OCR）」にチェックすると、APIキーなども無通信で探せます。</li>
           <li>枠をドラッグして位置と大きさを直します。四隅のハンドルでリサイズ、Delete で削除、Ctrl+Z で元に戻せます。</li>
-          <li>「枠を隠して確認」で隠れ方を確認し、確認済みにチェックします。</li>
+          <li>「隠し方」を変えると背景のプレビューにすぐ反映されます。仕上がりを見て、確認済みにチェックします。</li>
           <li>「マスクして保存」で JPEG 書き出し（複数枚は ZIP）。</li>
         </ol>
         <h3>データの行き先</h3>
         <ul>
-          <li><strong>ブラウザ内（顔のみ）</strong>: 画像は端末から出ません。</li>
+          <li><strong>ブラウザ内（無通信）</strong>: 顔も文字（OCR）も端末内で検出します。画像は端末から出ません。</li>
           <li><strong>Gemini</strong>: 検出を実行したときだけ、縮小した画像を Google に送信します。API キーはブラウザから Google へ直接送られ、当サイトのサーバーは関与しません。</li>
           <li><strong>Ollama</strong>: 指定したエンドポイント（通常は自分の PC）にのみ送信します。</li>
         </ul>
