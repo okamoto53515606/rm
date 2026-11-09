@@ -192,7 +192,7 @@ export class App {
       d.externalWarning.hidden = provider === 'local';
       d.externalWarning.textContent =
         provider === 'ollama'
-          ? '選択した写真は、指定した Ollama エンドポイントに送信されます。APIキーなどは、先に手動で隠してから検出するのが安全です。'
+          ? '選択した写真は、指定した Ollama エンドポイントに送信されます（既定はこの PC の localhost）。'
           : '';
     });
 
