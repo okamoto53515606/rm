@@ -75,11 +75,17 @@ for page in terms.html privacy.html; do
     --cache-control "no-cache" --content-type "text/html; charset=utf-8"
 done
 
+# OGP 画像（SNS のクローラが読むため MIME を明示し、キャッシュは短めに）
+aws s3 cp dist/og.jpg "s3://$BUCKET/og.jpg" \
+  "${AWS_OPTS[@]}" \
+  --cache-control "public, max-age=86400" --content-type "image/jpeg"
+
 # ハッシュ付きアセットは長期キャッシュ
 aws s3 sync dist "s3://$BUCKET" \
   "${AWS_OPTS[@]}" \
   --delete \
   --exclude "index.html" --exclude "terms.html" --exclude "privacy.html" \
+  --exclude "og.jpg" \
   --exclude "wasm/*" --exclude "models/*" --exclude "ocr/*" \
   --cache-control "public, max-age=31536000, immutable"
 

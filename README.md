@@ -4,7 +4,7 @@
 
 公開: **https://rm.okamomedia.tokyo/** ・ MIT License
 
-[![rm の検出画面](docs/screenshot/kenshutu_local.png)](https://rm.okamomedia.tokyo/)
+[![rm の検出画面](docs/screenshot/kenshutu_local.webp)](https://rm.okamomedia.tokyo/)
 
 既定は**完全ローカル（無通信）**。顔も文字（ナンバープレート・APIキーなど）もブラウザ内で検出できます。
 画像が当サイトのサーバーに送信されることはありません。
@@ -37,11 +37,11 @@
 
 | 顔（モザイク＋ぼかし） | ナンバープレート（黒塗り） |
 |---|---|
-| ![顔のマスク結果](docs/screenshot/local_result1.jpg) | ![ナンバープレートのマスク結果](docs/screenshot/local_result3.jpg) |
+| ![顔のマスク結果](docs/screenshot/local_result1.webp) | ![ナンバープレートのマスク結果](docs/screenshot/local_result3.webp) |
 
 | APIキーの黒塗り | 検出から書き出しまで |
 |---|---|
-| ![APIキーのマスク結果](docs/screenshot/local_result2.jpg) | ![検出画面](docs/screenshot/kenshutu_local.png) |
+| ![APIキーのマスク結果](docs/screenshot/local_result2.jpg) | ![検出画面](docs/screenshot/kenshutu_local.webp) |
 
 未確認のまま書き出そうとすると、目視確認を促す警告が出ます。
 
