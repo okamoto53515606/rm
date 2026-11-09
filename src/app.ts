@@ -192,7 +192,7 @@ export class App {
       d.externalWarning.hidden = provider === 'local';
       d.externalWarning.textContent =
         provider === 'ollama'
-          ? '選択した写真は、指定した Ollama エンドポイントに送信されます（既定はこの PC の localhost）。'
+          ? '選択した写真は、この PC の Ollama（localhost）に送信されます。'
           : '';
     });
 

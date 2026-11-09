@@ -225,6 +225,14 @@ async function detectWithOllama(raster: Raster, settings: DetectSettings): Promi
     throw new Error('Ollama のエンドポイントURLが不正です（例: http://localhost:11434）');
   }
 
+  // 公開版は CSP（connect-src）で localhost に限定しているため、
+  // それ以外の宛先はブラウザがブロックする。先に分かりやすく伝える。
+  if (!isLoopbackHost(hostname)) {
+    throw new Error(
+      '通信先は localhost に限定しています（CSP）。エンドポイントは http://localhost:11434 のように localhost / 127.0.0.1 を指定してください。',
+    );
+  }
+
   const permission = await lnaPermissionState(hostname);
   if (permission === 'denied') {
     throw new Error(lnaErrorMessage(permission, location.origin));
