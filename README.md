@@ -173,7 +173,9 @@ flowchart LR
 7B 級を CPU で回すと 1 枚に数分かかりますが、2B なら実用範囲の時間で返ります。
 
 Ollama への接続では、Chrome 142 以降の **Local Network Access（LNA）** に対応するため
-`targetAddressSpace: 'local'` を付与し、許可拒否・未起動・`OLLAMA_ORIGINS` 未設定を区別したエラーを表示します。
+接続先に応じて `targetAddressSpace` を宣言し（localhost は `loopback`、LAN は `local`）、
+宣言と実際のアドレス空間が食い違ってブロックされるのを防いでいます。
+許可拒否・未起動・`OLLAMA_ORIGINS` 未設定を区別したエラーを表示します。
 公開版の CSP は `connect-src` を localhost に限定しています。
 
 ### ローカルOCR（無通信の文字検出）

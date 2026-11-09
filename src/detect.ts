@@ -154,8 +154,14 @@ function normalizeEndpoint(value: string): string {
 
 type LnaState = 'granted' | 'denied' | 'prompt' | 'unsupported';
 
+// Chrome 142 以降の Local Network Access は接続先を
+// loopback（自分の PC）/ local（LAN）/ public に分ける。
+// 宣言と実際のアドレス空間が違うとリクエストがブロックされるため、
+// localhost は 'loopback'、それ以外は 'local' を宣言する。
+type AddressSpace = 'loopback' | 'local' | 'public';
+
 type OllamaRequestInit = RequestInit & {
-  targetAddressSpace?: 'local' | 'private' | 'public';
+  targetAddressSpace?: AddressSpace;
 };
 
 function isLoopbackHost(hostname: string): boolean {
@@ -166,6 +172,10 @@ function isLoopbackHost(hostname: string): boolean {
     hostname === '::1' ||
     hostname.endsWith('.localhost')
   );
+}
+
+function addressSpaceFor(hostname: string): AddressSpace {
+  return isLoopbackHost(hostname) ? 'loopback' : 'local';
 }
 
 async function lnaPermissionState(hostname: string): Promise<LnaState> {
@@ -228,8 +238,8 @@ async function detectWithOllama(raster: Raster, settings: DetectSettings): Promi
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     signal: controller.signal,
-    // ローカル/LAN 向けであることを明示（未対応ブラウザでは無視される）
-    targetAddressSpace: 'local',
+    // 接続先のアドレス空間を明示（未対応ブラウザでは無視される）
+    targetAddressSpace: addressSpaceFor(hostname),
     body: JSON.stringify({
       model,
       stream: false,
@@ -248,8 +258,17 @@ async function detectWithOllama(raster: Raster, settings: DetectSettings): Promi
     if (err instanceof DOMException && err.name === 'AbortError') {
       throw new Error('Ollama の応答がタイムアウトしました');
     }
-    const state = await lnaPermissionState(hostname);
-    throw new Error(`${lnaErrorMessage(state, location.origin)}\n詳細: ${String(err)}`);
+    // targetAddressSpace を解釈しない実装では、宣言なしでもう一度だけ試す
+    const { targetAddressSpace: _declared, ...withoutSpace } = init;
+    try {
+      res = await fetch(`${endpoint}/api/chat`, withoutSpace);
+    } catch (retryErr) {
+      if (retryErr instanceof DOMException && retryErr.name === 'AbortError') {
+        throw new Error('Ollama の応答がタイムアウトしました');
+      }
+      const state = await lnaPermissionState(hostname);
+      throw new Error(`${lnaErrorMessage(state, location.origin)}\n詳細: ${String(retryErr)}`);
+    }
   } finally {
     clearTimeout(timer);
   }
