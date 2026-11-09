@@ -3,10 +3,19 @@ import { bytesToBase64, clamp, iou } from './util';
 import { downscale } from './image';
 import { detectTextLocal } from './ocr';
 
-export const GEMINI_MODEL_DEFAULT = 'gemini-3.5-flash-lite';
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const DETECT_MAX_SIDE = 1536;
 
+type RawObject = {
+  label?: unknown;
+  box_2d?: unknown;
+  box2d?: unknown;
+  box?: unknown;
+  bbox?: unknown;
+  confidence?: unknown;
+};
+
+// Ollama で動かす VLM（LFM3-VL・Qwen-VL 系）は box_2d を
+// [xmin, ymin, xmax, ymax] の 0〜1000 正規化で返す。
 const PROMPT = `あなたは写真・スクリーンショットのプライバシー保護アシスタントです。
 この画像から「公開前に隠すべき領域」を検出してください。
 
@@ -18,7 +27,7 @@ const PROMPT = `あなたは写真・スクリーンショットのプライバ�
 5. 端末・アカウント情報: ユーザー名、ホスト名/PC名、ターミナルのプロンプト（例: user@host:~/dir$）、ホームディレクトリやフォルダ名などのファイルパス、社内ドメイン名
 6. ネットワーク情報: IPアドレス、ポート番号、内部URL、クラウドのアカウントID、バケット名
 
-座標は画像全体を 0〜1000 に正規化した [上, 左, 下, 右] の整数で返してください。
+座標は画像全体を 0〜1000 に正規化した [左, 上, 右, 下]（xmin, ymin, xmax, ymax）の整数で返してください。
 - 顔は「眉からあごまで、耳を含む顔の輪郭」にぴったり合わせ、髪・帽子・首・背景は含めないでください。
 - 文字列は、その文字列全体が隠れる最小限の矩形にしてください。
 - 余白は最小限にし、対象より明らかに大きい箱は返さないでください。
@@ -26,27 +35,8 @@ const PROMPT = `あなたは写真・スクリーンショットのプライバ�
 対象が無ければ objects を空配列にしてください。
 
 出力は次の JSON のみ:
-{"objects":[{"label":"face","box_2d":[ymin,xmin,ymax,xmax],"confidence":0.0}]}
+{"objects":[{"label":"face","box_2d":[xmin,ymin,xmax,ymax],"confidence":0.0}]}
 label は face / license_plate / secret_text / other のいずれか。`;
-
-const RESPONSE_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    objects: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          label: { type: 'STRING', enum: ['face', 'license_plate', 'secret_text', 'other'] },
-          box_2d: { type: 'ARRAY', items: { type: 'INTEGER' } },
-          confidence: { type: 'NUMBER' },
-        },
-        required: ['label', 'box_2d'],
-      },
-    },
-  },
-  required: ['objects'],
-};
 
 // ===== 共通 =====
 
@@ -106,7 +96,7 @@ function toDetection(label: string, coords: number[]): Detection | null {
   if (!Array.isArray(coords) || coords.length < 4) return null;
   const nums = coords.slice(0, 4).map(Number);
   if (nums.some((n) => !Number.isFinite(n))) return null;
-  const [ymin, xmin, ymax, xmax] = nums;
+  const [xmin, ymin, xmax, ymax] = nums;
   const x = clamp(Math.min(xmin, xmax) / 1000, 0, 1);
   const y = clamp(Math.min(ymin, ymax) / 1000, 0, 1);
   const w = clamp(Math.abs(xmax - xmin) / 1000, 0, 1 - x);
@@ -114,15 +104,6 @@ function toDetection(label: string, coords: number[]): Detection | null {
   if (w < 0.004 || h < 0.004) return null;
   const category = categorize(label);
   return { category, label: labelJa(category, label), box: { x, y, w, h } };
-}
-
-interface RawObject {
-  label?: unknown;
-  box_2d?: unknown;
-  box2d?: unknown;
-  box?: unknown;
-  bbox?: unknown;
-  confidence?: unknown;
 }
 
 function parseObjects(json: unknown): Detection[] {
@@ -155,81 +136,6 @@ function dedupe(list: Detection[]): Detection[] {
     }
   }
   return out;
-}
-
-// ===== Gemini =====
-
-async function detectWithGemini(raster: Raster, settings: DetectSettings): Promise<Detection[]> {
-  const key = settings.geminiKey.trim();
-  if (!key) throw new Error('Gemini API キーを入力してください');
-  const model = settings.geminiModel.trim() || GEMINI_MODEL_DEFAULT;
-  const image = await rasterToJpegBase64(raster);
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 120_000);
-  let res: Response;
-  try {
-    res = await fetch(`${GEMINI_BASE}/models/${encodeURIComponent(model)}:generateContent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      signal: controller.signal,
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: PROMPT }, { inlineData: { mimeType: 'image/jpeg', data: image } }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0,
-          responseMimeType: 'application/json',
-          responseSchema: RESPONSE_SCHEMA,
-          maxOutputTokens: 4096,
-        },
-      }),
-    });
-  } catch (err) {
-    if (err instanceof DOMException && err.name === 'AbortError') {
-      throw new Error('Gemini の応答がタイムアウトしました');
-    }
-    throw new Error(`Gemini に接続できませんでした（ネットワークまたは CORS）: ${String(err)}`);
-  } finally {
-    clearTimeout(timer);
-  }
-
-  if (!res.ok) {
-    let detail = '';
-    try {
-      const body = (await res.json()) as { error?: { message?: string } };
-      detail = body.error?.message ?? '';
-    } catch {
-      detail = await res.text().catch(() => '');
-    }
-    if (res.status === 400 || res.status === 401 || res.status === 403) {
-      throw new Error(`Gemini API キーが無効、または権限がありません: ${detail}`);
-    }
-    if (res.status === 429) {
-      throw new Error(`Gemini の利用上限に達しました（時間をおいて再試行してください）: ${detail}`);
-    }
-    if (res.status === 404) {
-      throw new Error(`モデル「${model}」が見つかりません。モデル名を確認してください: ${detail}`);
-    }
-    throw new Error(`Gemini API エラー (${res.status}): ${detail}`);
-  }
-
-  const data = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
-    promptFeedback?: { blockReason?: string };
-  };
-  if (data.promptFeedback?.blockReason) {
-    throw new Error(`画像が Gemini の安全フィルタで拒否されました: ${data.promptFeedback.blockReason}`);
-  }
-  const text = (data.candidates?.[0]?.content?.parts ?? [])
-    .map((p) => p.text ?? '')
-    .join('')
-    .trim();
-  if (!text) throw new Error('Gemini から検出結果が返りませんでした');
-  return dedupe(parseObjects(extractJson(text)));
 }
 
 // ===== Ollama =====
@@ -328,6 +234,8 @@ async function detectWithOllama(raster: Raster, settings: DetectSettings): Promi
       model,
       stream: false,
       format: 'json',
+      // 推論(thinking)は検出タスクでは不要で、2B モデルでは 3 倍近く遅くなる
+      think: false,
       options: { temperature: 0 },
       messages: [{ role: 'user', content: PROMPT, images: [image] }],
     }),
@@ -397,7 +305,7 @@ async function getLandmarker(): Promise<FaceLandmarkerLike> {
     })().catch((err) => {
       landmarkerPromise = null;
       throw new Error(
-        `ブラウザ内の顔検出モデルを読み込めませんでした。Gemini か Ollama をお使いください: ${String(err)}`,
+        `ブラウザ内の顔検出モデルを読み込めませんでした。Ollama をお使いください: ${String(err)}`,
       );
     });
   }
@@ -494,10 +402,7 @@ export async function detect(raster: Raster, settings: DetectSettings): Promise<
     return dedupe(results);
   }
 
-  const remote =
-    settings.provider === 'gemini'
-      ? await detectWithGemini(raster, settings)
-      : await detectWithOllama(raster, settings);
+  const remote = await detectWithOllama(raster, settings);
 
   if (!settings.refineFaces) return remote;
 

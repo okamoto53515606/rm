@@ -13,3 +13,6 @@ why.txt
 public/wasm/
 public/models/*.task
 public/ocr/
+
+# テスト用写真
+test-image-secret/

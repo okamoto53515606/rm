@@ -69,7 +69,7 @@ if (await sizeOf(modelPath) > 0) {
     console.log(`[assets] モデルを保存しました (${(size / 1024 / 1024).toFixed(1)} MB)`);
   } catch (err) {
     console.warn(`[assets] モデルの取得に失敗しました: ${err}`);
-    console.warn('[assets] ブラウザ内の顔検出は無効になります（Gemini / Ollama は利用可能です）');
+    console.warn('[assets] ブラウザ内の顔検出は無効になります（Ollama は利用可能です）');
   }
 }
 
@@ -119,7 +119,7 @@ if (existsSync(tesseractPkg) && existsSync(tesseractCore)) {
     } catch (err) {
       console.warn(`[assets] OCR ${lang.label}モデルの取得に失敗しました: ${err}`);
       if (lang.file === 'eng.traineddata') {
-        console.warn('[assets] ローカルOCRは無効になります（顔検出・Gemini・Ollama は利用可能です）');
+        console.warn('[assets] ローカルOCRは無効になります（顔検出・Ollama は利用可能です）');
       } else {
         console.warn('[assets] 日本語モデルが無いため、ローカルOCRは英語のみで動作します');
       }

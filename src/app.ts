@@ -1,6 +1,6 @@
 import { MaskEditor, type Tool } from './editor';
 import { canvasToJpeg, decodeFile, makeThumbnail, releaseRaster, renderMasked } from './image';
-import { detect, GEMINI_MODEL_DEFAULT } from './detect';
+import { detect } from './detect';
 import type { Detection, DetectSettings, EffectKind, PhotoDoc } from './types';
 import { baseName, download, iou, isTypingTarget, stamp, uid } from './util';
 import { zipSync } from 'fflate';
@@ -64,9 +64,7 @@ export class App {
     externalWarning: el<HTMLElement>('externalWarning'),
     providerNote: el<HTMLElement>('providerNote'),
     ollamaHint: el<HTMLElement>('ollamaHint'),
-    geminiFields: el<HTMLElement>('geminiFields'),
     ollamaFields: el<HTMLElement>('ollamaFields'),
-    geminiKey: el<HTMLInputElement>('geminiKey'),
     ollamaEndpoint: el<HTMLInputElement>('ollamaEndpoint'),
     ollamaModel: el<HTMLInputElement>('ollamaModel'),
     btnDetectCurrent: el<HTMLButtonElement>('btnDetectCurrent'),
@@ -186,19 +184,16 @@ export class App {
 
     d.selProvider.addEventListener('change', () => {
       const provider = d.selProvider.value;
-      d.geminiFields.hidden = provider !== 'gemini';
       d.ollamaFields.hidden = provider !== 'ollama';
       d.refineFields.hidden = provider === 'local';
       d.ocrFields.hidden = provider !== 'local';
-      // ブラウザ内のときは「Gemini / Ollama で文字検出」の説明は不要なので隠す
+      // ブラウザ内のときは「Ollama で文字検出」の説明は不要なので隠す
       d.providerNote.hidden = provider === 'local';
       d.externalWarning.hidden = provider === 'local';
       d.externalWarning.textContent =
-        provider === 'gemini'
-          ? '選択した写真は Google に送信されます。APIキーなどは、先に手動で隠してから検出するのが安全です。'
-          : provider === 'ollama'
-            ? '選択した写真は、指定した Ollama エンドポイントに送信されます。'
-            : '';
+        provider === 'ollama'
+          ? '選択した写真は、指定した Ollama エンドポイントに送信されます。APIキーなどは、先に手動で隠してから検出するのが安全です。'
+          : '';
     });
 
     d.btnDetectCurrent.addEventListener('click', () => {
@@ -367,8 +362,6 @@ export class App {
   private settings(): DetectSettings {
     return {
       provider: this.dom.selProvider.value as DetectSettings['provider'],
-      geminiKey: this.dom.geminiKey.value,
-      geminiModel: GEMINI_MODEL_DEFAULT,
       ollamaEndpoint: this.dom.ollamaEndpoint.value,
       ollamaModel: this.dom.ollamaModel.value,
       refineFaces: this.dom.chkFaceRefine.checked,
@@ -380,10 +373,6 @@ export class App {
   private async runDetect(targets: PhotoDoc[]): Promise<void> {
     if (this.busy) return;
     const settings = this.settings();
-    if (settings.provider === 'gemini' && !settings.geminiKey.trim()) {
-      this.setDetectStatus('Gemini API キーを入力してください', 'error');
-      return;
-    }
     if (settings.provider === 'ollama' && !settings.ollamaEndpoint.trim()) {
       this.setDetectStatus('Ollama のエンドポイントを入力してください', 'error');
       return;

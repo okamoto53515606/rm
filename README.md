@@ -7,13 +7,14 @@
 [![rm の検出画面](docs/screenshot/kenshutu_local.png)](https://rm.okamomedia.tokyo/)
 
 既定は**完全ローカル（無通信）**。顔も文字（ナンバープレート・APIキーなど）もブラウザ内で検出できます。
-画像が外部に渡るのは、利用者が **Gemini / Ollama** を選んで検出を実行したときだけです。
+文字認識を強化したいときは、**Ollama**（ローカルの視覚言語モデル）に切り替えられます。既定モデルは `lfm3-vl:2b` です。
 画像が当サイトのサーバーに送信されることはありません。
 
 ---
 
 ## できること
 
+- **PC 専用** — 大きな画像とローカル AI を扱うため、デスクトップのブラウザ（PC）を想定しています
 - **複数枚をまとめて処理** — ドラッグ＆ドロップ / ファイル選択 / `Ctrl+V` 貼り付け
 - **入力形式** — JPEG / PNG / WebP / GIF（先頭フレーム）/ BMP / AVIF / HEIC（変換）
 - **手動マスク** — 矩形・楕円・多角形（頂点をドラッグで調整）、移動・リサイズ・削除・元に戻す
@@ -26,7 +27,8 @@
   - IPアドレス・内部URL・クラウドのアカウントID・バケット名
 - **初期値は「ブラウザ内（無通信）」** — 顔検出。**ローカルOCR**をONにすると、APIキー・メール・パス・端末プロンプト・日本語のナンバープレートも無通信で検出（英語＋日本語）
   - 初回のみ 顔モデル＋OCR で約38MB、以後キャッシュ。2回目以降は1枚0.5〜1.5秒
-- **顔の精度補正** — Gemini / Ollama が返す粗い顔矩形を、ブラウザ内の顔検出（478ランドマーク）でタイトに補正
+- **顔の精度補正** — Ollama が返す粗い顔矩形を、ブラウザ内の顔検出（478ランドマーク）でタイトに補正
+- **Ollama で文字も検出** — `ollama pull lfm3-vl:2b` だけで使える。画像は localhost の Ollama にだけ送信
 - **一括書き出し** — JPEG に統一 / 長辺リサイズ / **EXIF（GPS等）を削除** / 複数枚は ZIP
 - **結果プレビュー** — 背景は常にマスク後の結果。枠は常に表示されるので、隠し方を変えた瞬間に見え方が変わる
 - **確認済みチェック** — 未確認のまま書き出すと警告（アプリ内モーダル）
@@ -81,9 +83,9 @@ npm run build    # dist/ へ本番ビルド
 npm run preview  # ビルド結果の確認
 ```
 
-**ネットにつながない使い方**: 「ブラウザ内（無通信）」を選べば、顔も文字も端末内で検出され、画像もAPIキーも一切送信しません。
+**ネットにつながない使い方**: 「ブラウザ内（無通信）」を選べば、顔も文字も端末内で検出され、画像も一切送信しません。
 モデルはローカル配信なので、一度読み込んだ後はオフラインでも動作します。
-（Gemini を使う場合のみインターネット接続が必要です。）
+（Ollama を使う場合だけ、モデルのダウンロードにインターネット接続が必要です。）
 
 ---
 
@@ -92,30 +94,29 @@ npm run preview  # ビルド結果の確認
 | 項目 | 取扱い |
 |---|---|
 | 画像 | ブラウザ内で処理。当サイトのサーバーへ送信しない |
-| Gemini 利用時 | 検出を実行したときだけ、長辺 1536px に縮小した JPEG を Google へ送信 |
-| Ollama 利用時 | 利用者が指定したエンドポイント（通常は localhost）にのみ送信 |
-| API キー | メモリ上のみ。`localStorage`・Cookie・サーバーには保存しない |
+| Ollama 利用時 | 指定したエンドポイント（既定は localhost:11434）にのみ送信 |
+| 入力内容 | Ollama のエンドポイントとモデル名のみ。メモリ上だけで、保存しない |
 | 書き出し | Canvas で再エンコードするため、EXIF（GPS・撮影機材・日時）は残らない |
 | アクセス解析 | なし（Cookie・広告・外部フォント・外部CDN も不使用） |
-| 通信先の制限 | CloudFront の **CSP** で Gemini と localhost 以外への送信をブロック |
+| 通信先の制限 | CloudFront の **CSP** で localhost 以外への送信をブロック |
 | 配信 | S3 は非公開 + CloudFront OAC。S3 への直接アクセス不可 |
 
-- 画像が外部に出るのは、利用者が「Gemini」または「Ollama」を選んで検出を実行したときだけです。
+- 画像が端末の外に出るのは、Ollama の送信先を自分の PC 以外にした場合だけです。
 - 「ブラウザ内」は顔（MediaPipe）も文字（Tesseract.js）も端末内で完結します（各ライブラリのテレメトリも CSP で遮断）。
 - AI の検出は 100% ではありません。「確認済み」を付けるまで書き出し時に警告します。
 - ソースは MIT で公開しているので、通信先や保存の有無は誰でも検証できます。
 
 ### 正直なトレードオフ
 
-「APIキーを隠す」ために、その API キーが写った画像を外部 AI に送る——この矛盾は rm にもあります。
+「APIキーを隠す」ために、その API キーが写った画像を AI に読ませる——この矛盾は rm にもあります。
 
 | モード | 通信 | 顔 | 文字 |
 |---|---|---|---|
 | ブラウザ内（既定） | なし | ○ | △（ローカルOCR・英語＋日本語） |
-| Gemini / Ollama | あり（選択時のみ） | ○ | ○（多言語・高精度） |
+| Ollama（`lfm3-vl:2b`） | localhost のみ | ○ | ○（多言語・高精度。2B なので揺れる） |
 
 - 機密情報は、**先に手動で隠してから検出**するのが最も安全です（二段階）。
-- Gemini を選ぶと、UI にも「画像が Google に送信されます」と警告を表示します。
+- Ollama を選ぶと、UI にも「指定したエンドポイントに送信されます」と警告を表示します。
 - **ローカルOCR**（Tesseract.js＋正規表現）は外部送信なしで動きますが、**誤認識もあります**（特に日本語は小さく斜めの文字が苦手）。
 
 > 注意: 静的配信基盤（CloudFront / S3）には、通常のWebアクセスと同様に
@@ -131,8 +132,7 @@ npm run preview  # ビルド結果の確認
 flowchart LR
   U[ブラウザ] -->|GET 静的ファイル| CF[CloudFront + CSP]
   CF --> S3[(S3 ap-northeast-1)]
-  U -->|検出時のみ・縮小JPEG| G[Gemini API]
-  U -.->|任意| O[Ollama localhost]
+  U -->|検出時のみ・縮小JPEG| O[Ollama localhost]
   subgraph ブラウザ内
     U --- W[MediaPipe WASM<br/>顔検出 478点]
     U --- C[Konva<br/>マスク編集]
@@ -160,23 +160,21 @@ flowchart LR
 ### 検出の仕組み
 
 1. 元画像を長辺 **1536px** に縮小して JPEG（q0.85）化
-2. Gemini `gemini-3.5-flash-lite` の `generateContent` に `inlineData` で送信
-   - APIキーは `x-goog-api-key` ヘッダ（URLに載せない）
-   - `responseMimeType: application/json` + `responseSchema` で JSON を強制
-   - 応答の `box_2d` は `[ymin, xmin, ymax, xmax]` の **0〜1000 正規化**座標
+2. Ollama の `/api/chat` に `images: [base64]`・`format: "json"`・`think: false` で送信
+   - 既定モデルは `lfm3-vl:2b`（画面から変更可能）
+   - 応答の `box_2d` は **[xmin, ymin, xmax, ymax]** の **0〜1000 正規化**座標（LFM3-VL / Qwen-VL 系の形式）
+   - `think: false` にすると、2B モデルでは応答が約 3 倍速くなる（精度は実測で変わらない）
 3. 正規化座標のまま原寸へ逆変換（縮小しても比率は変わらない）
 4. **ハイブリッド補正**: ローカル顔検出の矩形と重なり率（小さい方の面積比）が 0.5 超なら、
    VLM の粗い顔矩形を捨ててローカルのタイトな矩形を採用。VLM が見落とした顔もローカル側で追加。
 5. 文字カテゴリは端の半文字が残らないよう、外側に画像の 0.4% だけパディングしてからマスクにする。
 
-モデルはあえて最大級ではなく **`gemini-3.5-flash-lite`** を採用しています。
-速度・コスト・「用途を絞れば小さなモデルで足りる」という源さんの記事の考え方に沿った選択です。
+モデルは、この用途に必要十分な **`lfm3-vl:2b`**（1.6GB / Q4_K_M）を既定にしています。
+7B 級を CPU で回すと 1 枚に数分かかりますが、2B なら実用範囲の時間で返ります。
 
-Ollama は `/api/chat` に `images: [base64]`・`format: "json"` で送信します。
-Chrome 142 以降の **Local Network Access（LNA）** に対応するため `targetAddressSpace: 'local'` を付与し、
-許可拒否・未起動・`OLLAMA_ORIGINS` 未設定を区別したエラーを表示します。
-公開版の CSP は `connect-src` を localhost に限定しているため、LAN 上の Ollama を使う場合は
-`template.yaml` の `connect-src` を変更して自前デプロイしてください。
+Ollama への接続では、Chrome 142 以降の **Local Network Access（LNA）** に対応するため
+`targetAddressSpace: 'local'` を付与し、許可拒否・未起動・`OLLAMA_ORIGINS` 未設定を区別したエラーを表示します。
+公開版の CSP は `connect-src` を localhost に限定しています。
 
 ### ローカルOCR（無通信の文字検出）
 
@@ -191,7 +189,7 @@ worker・WASMコア・英語/日本語モデルはすべて `public/ocr/` から
    読めたら、その矩形（プレート全体）をマスクする
 
 対象: Google/AWS/OpenAI/GitHub/Slack のキー、JWT、秘密鍵ヘッダ、メール、IP、認証付きURL、
-`/home/...` などのパス、`user@host:~/dir$` のプロンプト、`GEMINI_API_KEY = ...` などの代入、
+`/home/...` などのパス、`user@host:~/dir$` のプロンプト、`OPENAI_API_KEY = ...` などの代入、
 日本のナンバープレート（地名＋分類番号＋ひらがな＋4桁）。
 
 > 日本語モデルを同梱していますが、小さい・斜め・低コントラストの文字は誤認識します。
@@ -213,7 +211,7 @@ worker・WASMコア・英語/日本語モデルはすべて `public/ocr/` から
 - 上段の「地名＋分類番号」は文字が小さく誤読しやすいため、判定は**下段の番号**を主な手がかりにし、
   隠す範囲はプレート全体にしています。`PSM`（ページ分割モード）も、全体は自動・切り出しは単一ブロックと使い分けています。
 - そのため、**傾きが強い・プレートが極端に小さい・夜間で白飛び/黒つぶれしている**写真では検出できないことがあります。
-  その場合は Gemini か手動の枠をご利用ください。
+  その場合は Ollama（VLM）か手動の枠をご利用ください。
 
 ### マスク描画と書き出し
 
@@ -226,10 +224,10 @@ worker・WASMコア・英語/日本語モデルはすべて `public/ocr/` から
 ### CSP（CloudFront のレスポンスヘッダー）
 
 ```
-default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; child-src 'self' blob:; connect-src 'self' https://generativelanguage.googleapis.com http://localhost:* http://127.0.0.1:* http://[::1]:* https://localhost:* https://127.0.0.1:* https://[::1]:*
+default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; child-src 'self' blob:; connect-src 'self' http://localhost:* http://127.0.0.1:* https://localhost:* https://127.0.0.1:*
 ```
 
-`connect-src` を絞ることで「Gemini 以外に送らない」をブラウザ側で強制しています。
+`connect-src` を localhost に絞ることで、「画像を自分の PC の外に出さない」をブラウザ側で強制しています。
 
 ### ファイル構成
 
@@ -240,7 +238,7 @@ default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; 
 │   ├── app.ts            UI・状態管理・書き出し
 │   ├── editor.ts         Konva によるマスク編集
 │   ├── image.ts          デコード / マスク描画 / JPEG化
-│   ├── detect.ts         ローカル顔検出 / Gemini / Ollama / ハイブリッド補正
+│   ├── detect.ts         ローカル顔検出 / Ollama / ハイブリッド補正
 │   ├── types.ts         型定義
 │   ├── util.ts           ユーティリティ
 │   └── style.css         ブラックテーマ
@@ -287,10 +285,25 @@ CNAME 先は `aws cloudformation describe-stacks --stack-name rm --query "Stacks
 | ブラウザ内（無通信） | ✅ テスト済み | Chrome で顔検出・マスク・書き出しと、ローカルOCR（文字・ナンバープレート）を確認 |
 | ブラウザ内OCR | ✅ テスト済み | 合成画像で検出確認（プロンプト/APIキー/伏せ字キー/メール）。実写真（4032×3024）でナンバープレートを検出。1枚 0.3〜1.3秒（プレート探索込） |
 | 枠の編集（矩形/楕円/多角形） | ✅ テスト済み | 楕円の作成・ハンドルでの拡大縮小（連続2回）・黒塗り反映をブラウザ内で自動テスト。検出後に選択ツールへ自動復帰 |
-| Gemini（`gemini-3.5-flash-lite`） | ✅ テスト済み | 顔・ナンバープレート・APIキー・ターミナル文字列で確認 |
-| Ollama（実験的） | ⏳ **未検証** | okamo の環境に Ollama がなく未検証。LNA 許可/拒否/未起動の分岐は実装済み。近いうちに検証します。ごめんなさい。 |
+| Ollama（`lfm3-vl:2b`） | ✅ テスト済み | 公開版から PC 上の Ollama に接続し、顔・ナンバープレート・APIキー画面で確認（下記） |
 
-Ollama の手順は実装済みです（`OLLAMA_ORIGINS` と Chrome 142+ の LNA 許可が必要）。検証が済んだらこの表を更新します。
+### Ollama（`lfm3-vl:2b`）の実測
+
+公開版 **https://rm.okamomedia.tokyo/** から、PC 上の Ollama に接続して検出しました。
+
+- 環境: Windows 11 / WSL2（Ubuntu 22.04）・12 コア・メモリ 15GB・GeForce MX250（2GB）
+- Ollama 0.40.15 / `lfm3-vl:2b`（1.6GB・Q4_K_M）。GPU メモリが 2GB のため 72% CPU / 28% GPU の部分オフロード
+
+| テスト画像 | 検出結果 | 所要時間 |
+|---|---|---|
+| APIキー一覧のスクリーンショット（1216×501） | APIキー 2か所 | 約13秒 |
+| ナンバープレートの写真（4032×3024） | プレート 1か所 | 約14秒 |
+| 顔写真（4032×3024） | 顔 1か所 | 約14秒 |
+
+- 3枚まとめて約41秒。モデルの初回ロードを含む1枚目だけは約87秒かかりました。
+- 2B モデルなので出力は完全には安定しません（同じスクリーンショットで 2か所→0か所になった例があります）。
+- 顔の枠はやや大きめに出ます。ブラウザ内の顔検出（478点）が顔を見つけられた場合は、そちらでタイトに補正されます。
+- 検出座標は `[xmin, ymin, xmax, ymax]`（LFM3-VL / Qwen-VL 系の形式）として解釈しています。
 
 ### EXIF の実測
 
@@ -411,7 +424,7 @@ rm では、読み取った行に正規表現を当てて「APIキー」「メ�
 このツールは、AI コーディングアシスタント（DeepSeek V4.1 Flash）とのやりとりだけで作られました。
 設計の相談から実装・AWS デプロイ・つまずいた点まで、開発ログをそのまま公開しています。
 
-- [開発ログ（2026-11-08）](docs/screenshot/prompt_history/20261108_deepseek-v4.1-flash.txt)
+- [開発ログ（2026-11-08）](prompt_history/20261108_deepseek-v4.1-flash.txt)
 
 > ログ内の API キー・AWS アカウントID・証明書 ARN・ホスト名・メールアドレスはマスク済みです。
 

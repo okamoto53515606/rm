@@ -56,7 +56,7 @@ const PATTERNS: { re: RegExp; label: string }[] = [
     label: 'ユーザー名・ホスト・パス',
   },
   { re: /(?:\/home\/|\/Users\/|[A-Za-z]:\\Users\\)[A-Za-z0-9._-]+/, label: 'ユーザー名・パス' },
-  // 環境変数風の代入（GEMINI_API_KEY = ... など）
+  // 環境変数風の代入（OPENAI_API_KEY = ... など）
   {
     re: /(?:^|\s)[A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD)[A-Z0-9_]*\s*[:=]\s*\S+/,
     label: '認証情報',

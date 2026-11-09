@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#08080a" />
-    <meta name="description" content="写真の顔・ナンバープレート・APIキーなどを隠せる無料ツール。既定は完全ローカル（無通信）で、顔も文字もブラウザ内で検出します。AI（Gemini / Ollama）を選んだときだけ画像を送信します。" />
+    <meta name="description" content="写真の顔・ナンバープレート・APIキーなどを隠せる無料ツール。既定は完全ローカル（無通信）で、顔も文字もブラウザ内で検出します。Ollama を選んだときだけ、指定したローカル AI に画像を送信します。" />
     <title>rm — 写真の顔・ナンバー・秘密をブラウザで隠す</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./src/style.css" />
@@ -17,6 +17,7 @@
         <img src="./favicon.svg" alt="" width="28" height="28" />
         <span>rm</span>
       </a>
+      <span class="badge">PC専用</span>
       <span class="badge">既定は完全ローカル</span>
       <span class="tagline">写真の顔・ナンバープレート・APIキーを隠すツール</span>
       <div class="spacer"></div>
@@ -96,29 +97,20 @@
             <span>検出方法</span>
             <select id="selProvider">
               <option value="local" selected>ブラウザ内（無通信）</option>
-              <option value="gemini">Gemini API（顔・ナンバー・秘密・ユーザー名/パス）</option>
-              <option value="ollama">Ollama（ローカルLLM・実験的）</option>
+              <option value="ollama">Ollama（ローカルLLM）</option>
             </select>
           </label>
           <p class="note warn" id="externalWarning" hidden></p>
-          <p class="note" id="providerNote">自動検出は 顔・ナンバープレート・APIキー・氏名/連絡先・ユーザー名/パス などを探します。文字の検出には Gemini / Ollama、またはローカルOCRを使います。</p>
+          <p class="note" id="providerNote">自動検出は 顔・ナンバープレート・APIキー・氏名/連絡先・ユーザー名/パス などを探します。文字の検出には Ollama、またはローカルOCRを使います。</p>
 
           <div id="refineFields">
             <label class="check"><input type="checkbox" id="chkFaceRefine" checked /> 顔の枠をブラウザ検出で補正</label>
-            <p class="note">Gemini / Ollama の顔の枠を、端末内の顔検出（478点）でぴったりに合わせ直します。初回のみ顔モデルを読み込みます。</p>
+            <p class="note">Ollama の顔の枠を、端末内の顔検出（478点）でぴったりに合わせ直します。初回のみ顔モデルを読み込みます。</p>
           </div>
 
           <div id="ocrFields" hidden>
             <label class="check"><input type="checkbox" id="chkLocalOcr" /> 文字も検出（OCR・無通信）</label>
             <p class="note">初回のみOCRデータ約18MB（顔モデルと合わせて約38MB）を読み込みます。1枚2〜4秒。APIキー・メール・パス・端末プロンプトを正規表現で探します。ナンバープレートは、写真の中の明るい四角を探してその部分を拡大し、番号が読めたときに隠します。</p>
-          </div>
-
-          <div id="geminiFields">
-            <label class="field">
-              <span>Gemini API キー</span>
-              <input id="geminiKey" type="password" placeholder="AIza..." autocomplete="off" spellcheck="false" />
-            </label>
-            <p class="note">キーは保存しません（再読み込みで消えます）。画像はこの操作のときだけ Google に送信されます。</p>
           </div>
 
           <div id="ollamaFields" hidden>
@@ -128,7 +120,7 @@
             </label>
             <label class="field">
               <span>モデル名</span>
-              <input id="ollamaModel" type="text" value="qwen2.5vl:7b" spellcheck="false" />
+              <input id="ollamaModel" type="text" value="lfm3-vl:2b" spellcheck="false" />
             </label>
             <p class="note" id="ollamaHint"></p>
             <p class="note"><a href="./terms.html#ollama" target="_blank" rel="noopener">Ollama の設定手順</a></p>
@@ -170,8 +162,8 @@
           <h2>プライバシー</h2>
           <ul>
             <li>画像が当サイトのサーバーに送られることはありません。</li>
-            <li>Gemini 利用時のみ、画像が Google に送信されます。</li>
-            <li>API キーは保存せず、当サイトにも送りません。</li>
+            <li>Ollama を使うときだけ、指定したエンドポイント（通常は localhost）に画像が送られます。</li>
+            <li>API キーなどの入力項目はありません（保存も送信もしません）。</li>
             <li>アクセス解析・Cookie・外部フォントは不使用です。</li>
           </ul>
           <p class="note">AI の検出は 100% ではありません。公開前の目視確認をおすすめします。</p>
@@ -192,8 +184,7 @@
         <h3>データの行き先</h3>
         <ul>
           <li><strong>ブラウザ内（無通信）</strong>: 顔も文字（OCR）も端末内で検出します。画像は端末から出ません。</li>
-          <li><strong>Gemini</strong>: 検出を実行したときだけ、縮小した画像を Google に送信します。API キーはブラウザから Google へ直接送られ、当サイトのサーバーは関与しません。</li>
-          <li><strong>Ollama</strong>: 指定したエンドポイント（通常は自分の PC）にのみ送信します。</li>
+          <li><strong>Ollama</strong>: 指定したエンドポイント（通常は自分の PC の localhost）にのみ送信します。送信先を外部サーバーにすれば、そのサーバーには画像が届きます。</li>
         </ul>
         <h3>できないこと・注意</h3>
         <ul>

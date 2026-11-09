@@ -3,7 +3,7 @@
 export type EffectKind = 'mosaic+blur' | 'mosaic' | 'blur' | 'fill';
 export type MaskKind = 'rect' | 'ellipse' | 'polygon';
 export type MaskSource = 'auto' | 'manual';
-export type DetectProvider = 'local' | 'gemini' | 'ollama';
+export type DetectProvider = 'local' | 'ollama';
 
 /** 画像の原寸ピクセル座標での矩形 */
 export interface Box {
@@ -57,8 +57,6 @@ export interface Detection {
 
 export interface DetectSettings {
   provider: DetectProvider;
-  geminiKey: string;
-  geminiModel: string;
   ollamaEndpoint: string;
   ollamaModel: string;
   /** 顔の矩形をブラウザ内の顔検出で補正する */
