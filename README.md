@@ -121,6 +121,7 @@ flowchart LR
   CF --> S3[(S3 ap-northeast-1)]
   subgraph ブラウザ内
     U --- W[MediaPipe WASM<br/>顔検出 478点]
+    U --- T[Tesseract.js<br/>文字OCR eng＋jpn]
     U --- C[Konva<br/>マスク編集]
     U --- Z[Canvas<br/>JPEG / ZIP 書き出し]
   end
