@@ -339,10 +339,13 @@ async function getLandmarker(): Promise<FaceLandmarkerLike> {
   return landmarkerPromise;
 }
 
-async function detectFacesLocal(raster: Raster): Promise<Detection[]> {
-  const landmarker = await getLandmarker();
-  const canvas = downscale(raster, 1024);
-  const result = landmarker.detect(canvas);
+type LandmarkResult = { faceLandmarks: { x: number; y: number }[][] };
+
+/** ランドマークを画像全体の 0〜1 矩形へ変換する（タイル座標にも対応） */
+function detectionsFromLandmarks(
+  result: LandmarkResult,
+  toImage: (x: number, y: number) => { x: number; y: number },
+): Detection[] {
   const out: Detection[] = [];
   for (const landmarks of result.faceLandmarks) {
     if (!landmarks.length) continue;
@@ -358,14 +361,74 @@ async function detectFacesLocal(raster: Raster): Promise<Detection[]> {
     }
     const padX = (maxX - minX) * 0.1;
     const padY = (maxY - minY) * 0.12;
-    const x = clamp(minX - padX, 0, 1);
-    const y = clamp(minY - padY, 0, 1);
-    const w = clamp(maxX - minX + padX * 2, 0, 1 - x);
-    const h = clamp(maxY - minY + padY * 2, 0, 1 - y);
+    const x0 = clamp(minX - padX, 0, 1);
+    const y0 = clamp(minY - padY, 0, 1);
+    const x1 = clamp(maxX + padX, 0, 1);
+    const y1 = clamp(maxY + padY, 0, 1);
+    const a = toImage(x0, y0);
+    const b = toImage(x1, y1);
+    const x = clamp(Math.min(a.x, b.x), 0, 1);
+    const y = clamp(Math.min(a.y, b.y), 0, 1);
+    const w = clamp(Math.abs(b.x - a.x), 0, 1 - x);
+    const h = clamp(Math.abs(b.y - a.y), 0, 1 - y);
     if (w < 0.01 || h < 0.01) continue;
     out.push({ category: 'face', label: '顔', box: { x, y, w, h } });
   }
-  return dedupe(out);
+  return out;
+}
+
+/**
+ * 小さい顔が写っている＝集合写真の可能性が高いときだけ、2x2 タイルで検出する。
+ * 1024px に縮小した全体像では、集合写真の顔は数十pxになり検出器が落とすため。
+ */
+function needsTiledFaces(raster: Raster, faces: Detection[]): boolean {
+  if (Math.max(raster.width, raster.height) < 1600) return false;
+  if (!faces.length) return false;
+  return Math.min(...faces.map((f) => f.box.w)) < 0.2;
+}
+
+function detectFacesTiled(raster: Raster, landmarker: FaceLandmarkerLike): Detection[] {
+  const W = raster.width;
+  const H = raster.height;
+  const cols = 2;
+  const rows = 2;
+  const overlap = 0.15;
+  const tw = W / (cols - (cols - 1) * overlap);
+  const th = H / (rows - (rows - 1) * overlap);
+  const found: Detection[] = [];
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const sx = Math.min(W - tw, col * tw * (1 - overlap));
+      const sy = Math.min(H - th, row * th * (1 - overlap));
+      const scale = Math.min(1, 1024 / Math.max(tw, th));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(tw * scale));
+      canvas.height = Math.max(1, Math.round(th * scale));
+      const ctx = canvas.getContext('2d');
+      if (!ctx) continue;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(raster, sx, sy, tw, th, 0, 0, canvas.width, canvas.height);
+      const toImage = (x: number, y: number) => ({
+        x: (sx + x * tw) / W,
+        y: (sy + y * th) / H,
+      });
+      found.push(...detectionsFromLandmarks(landmarker.detect(canvas), toImage));
+    }
+  }
+  // 隣接タイルの重なり部分で同じ顔が取れるため、重複を除く
+  const unique: Detection[] = [];
+  for (const d of found) {
+    if (!unique.some((u) => iou(u.box, d.box) > 0.4)) unique.push(d);
+  }
+  return unique;
+}
+
+async function detectFacesLocal(raster: Raster): Promise<Detection[]> {
+  const landmarker = await getLandmarker();
+  const full = detectionsFromLandmarks(landmarker.detect(downscale(raster, 1024)), (x, y) => ({ x, y }));
+  if (!needsTiledFaces(raster, full)) return dedupe(full);
+  // 集合写真では 1024px への縮小で小さい顔が落ちるため、分割して拾い直す
+  return dedupe([...full, ...detectFacesTiled(raster, landmarker)]);
 }
 
 // ===== 入口 =====

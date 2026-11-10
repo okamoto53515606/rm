@@ -1,0 +1,59 @@
+{
+  "images": [
+    {
+      "id": "face_selfie_IMG_2864",
+      "file": "test-image-secret/IMG_2864.jpeg",
+      "tags": ["face", "real"],
+      "expect": { "face": 1 },
+      "note": "実写真（車内の自撮り・横向きではない）",
+      "gt": [
+        {
+          "category": "face",
+          "box": { "x": 0.6, "y": 0.0, "w": 0.4, "h": 0.7 }
+        }
+      ]
+    },
+    {
+      "id": "plate_IMG_0191",
+      "file": "test-image-secret/IMG_0191.jpeg",
+      "tags": ["plate", "real"],
+      "expect": { "plate": 1 },
+      "note": "実写真（EXIF 回転あり。座標は回転後の向き）",
+      "gt": [
+        {
+          "category": "plate",
+          "box": { "x": 0.311, "y": 0.293, "w": 0.366, "h": 0.122 }
+        }
+      ]
+    },
+    {
+      "id": "secret_deepseek",
+      "file": "test-image-secret/deepseek1.png",
+      "tags": ["secret", "real"],
+      "expect": { "secret": 4 },
+      "note": "実スクショ（追跡ID 2件＋マスク済みキー 2件）",
+      "gt": [
+        {
+          "category": "secret",
+          "box": { "x": 0.278, "y": 0.7305, "w": 0.2253, "h": 0.0519 },
+          "note": "追跡ID 1"
+        },
+        {
+          "category": "secret",
+          "box": { "x": 0.5238, "y": 0.7305, "w": 0.1653, "h": 0.0519 },
+          "note": "キー 1"
+        },
+        {
+          "category": "secret",
+          "box": { "x": 0.278, "y": 0.862, "w": 0.2253, "h": 0.0519 },
+          "note": "追跡ID 2"
+        },
+        {
+          "category": "secret",
+          "box": { "x": 0.5238, "y": 0.862, "w": 0.1653, "h": 0.0519 },
+          "note": "キー 2"
+        }
+      ]
+    }
+  ]
+}

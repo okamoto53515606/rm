@@ -28,6 +28,8 @@ function prepareOcrCanvas(raster: Raster): HTMLCanvasElement {
 // 完璧ではないが、APIキー・連絡先・端末情報の「見落とし」を減らすための保険。
 const PATTERNS: { re: RegExp; label: string }[] = [
   { re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/, label: '秘密鍵' },
+  // OCR が先頭・末尾のダッシュを落とす場合の保険
+  { re: /BEGIN\s+[A-Z0-9 ]*PRIVATE KEY/i, label: '秘密鍵' },
   // OCR は 0 を @ と読み違えることがあるため、@ も許容する
   { re: /\bAIza[0-9A-Za-z_@-]{25,}\b/i, label: 'APIキー' },
   { re: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/i, label: 'AWSキー' },
@@ -35,10 +37,23 @@ const PATTERNS: { re: RegExp; label: string }[] = [
   { re: /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/i, label: 'トークン' },
   { re: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/i, label: 'トークン' },
   { re: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/, label: 'トークン' },
+  // AWS の設定ファイル形式（小文字の aws_secret_access_key など）
+  { re: /\baws[_-]?access[_-]?key[_-]?id\b\s*[:=]\s*\S+/i, label: 'AWSキー' },
+  {
+    re: /\b(?:aws[_-]?)?secret[_-]?access[_-]?key\b\s*[:=]\s*\S+/i,
+    label: 'AWSシークレットキー',
+  },
+  { re: /\baws[_-]?session[_-]?token\b\s*[:=]\s*\S+/i, label: 'トークン' },
   // 既に一部が伏せ字のキー（sk-3045e*******f75a など。OCR の空白揺れを許容）
   {
     re: /\bsk-[A-Za-z0-9]{2,}\s*[^A-Za-z0-9\s]{2,}\s*[A-Za-z0-9]{2,}\b/i,
     label: 'APIキー',
+  },
+  // 接頭辞が既知でない長いランダム文字列（APIキー・シークレット）。
+  // 大文字・小文字・数字がすべて含まれる 32 文字以上に限定して誤検出を抑える。
+  {
+    re: /\b(?=[A-Za-z0-9_-]{32,}\b)(?=[A-Za-z0-9_-]*[A-Z])(?=[A-Za-z0-9_-]*[a-z])(?=[A-Za-z0-9_-]*[0-9])[A-Za-z0-9_-]+/,
+    label: 'トークン',
   },
   // UUID（完全形・中略形）
   {
@@ -49,6 +64,11 @@ const PATTERNS: { re: RegExp; label: string }[] = [
   // 日付+名前のキー名（20261010-vscode-github-copilot など）
   { re: /\b20\d{6}-[A-Za-z0-9_-]{3,}\b/i, label: 'キー名/ID' },
   { re: /\b[a-z][a-z0-9+.-]*:\/\/[^\s/@:]+:[^\s/@]+@/i, label: '認証付きURL' },
+  // OCR が @ を G などと誤読しても接続文字列として拾う保険
+  {
+    re: /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis|amqp|mssql):\/\/\S+/i,
+    label: '接続文字列',
+  },
   { re: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/, label: 'メールアドレス' },
   // ターミナルのプロンプト（OCRの空白揺れを許容）
   {
@@ -75,9 +95,17 @@ const PATTERNS: { re: RegExp; label: string }[] = [
   { re: /[一-龥]{1,4}\s*\d{2,3}$/, label: 'ナンバープレート' },
   // 2段組みの下段（ひらがな＋番号。例: あ 12-34）
   { re: /[ぁ-ん]\s*\d{2,4}\s*[-−–—－ー‐]\s*\d{2,4}$/, label: 'ナンバープレート候補' },
+  // 4桁の番号を空白・中黒・ピリオドで区切った表記（例: 99 99 / 12・34）
+  { re: /(?:^|\D)\d{2}\s*[・･.．]\s*\d{2}(?:\D|$)/, label: 'ナンバープレート候補' },
+  { re: /(?:^|\D)\d{2}\s+\d{2}(?:\D|$)/, label: 'ナンバープレート候補' },
   // 下段の番号のみ読めた場合（例: «12-34, = / m< 12-34）。前後の誤読ノイズを少し許容する
   {
     re: /^.{0,6}\d{2,4}\s*[-−–—－ー‐]\s*\d{2,4}.{0,4}$/,
+    label: 'ナンバープレート候補',
+  },
+  // 区切り記号が OCR で崩れたプレート（数字と記号だけの行。2〜3グループ、数字4〜7個）
+  {
+    re: /^(?=(?:[^0-9]*[0-9]){4,7}[^0-9]*$)[^\dA-Za-z]{0,2}\d{2,4}(?:[^\dA-Za-z]{1,2}\d{2,4}){1,2}[^\dA-Za-z]{0,2}$/,
     label: 'ナンバープレート候補',
   },
   // ナンバープレートの数字部分（OCRは日本語部分を読めないため、数字列で拾う）
@@ -88,8 +116,14 @@ const PATTERNS: { re: RegExp; label: string }[] = [
   { re: /^\d{2,4}\s*[-−–—－ー‐]\s*\d{2,4}$/, label: '数字列（ナンバー候補）' },
 ];
 
+/** プロンプトだけの行（例: user@host:~/dir$）。コマンドを含む行は従来どおり隠す */
+const BARE_PROMPT = /^(?:[A-Za-z0-9._-]+\s*@\s*[A-Za-z0-9._-]+\s*[:~][^\n]*[$#])\s*$/;
+
 /** 1行のテキストから隠すべき情報を判定する */
 export function matchSecret(text: string): string | null {
+  // プロンプトだけの行（コマンドを含まない）は、ユーザー名・ホスト名の公開を
+  // 許容するケースがあるため対象外にする。
+  if (BARE_PROMPT.test(text)) return null;
   for (const p of PATTERNS) {
     if (p.re.test(text)) return p.label;
   }
@@ -198,13 +232,19 @@ export async function detectTextLocal(
   const out = linesToDetections(collectLines(base.data), canvas.width, canvas.height);
 
   // ナンバープレートは写真全体では小さすぎて読めないことが多い。
-  // 見つからなければ、白くて明るい「プレートらしい領域」を探して拡大し直す。
-  if (!out.some((d) => PLATE_LABELS.has(d.label))) {
-    const plates = await detectPlatesInPhoto(worker, raster, onProgress);
-    for (const d of plates) {
-      if (out.some((e) => iou(e.box, d.box) > 0.3)) continue;
-      out.push(d);
+  // また、文字が読めても OCR の行ボックスだけではプレート全体を隠せない。
+  // 白くて明るい「プレートらしい領域」を探し、見つかったら行ボックスと置き換える。
+  const plates = await detectPlatesInPhoto(
+    worker,
+    raster,
+    onProgress,
+    out.filter((d) => PLATE_LABELS.has(d.label)).map((d) => d.box),
+  );
+  for (const plate of plates) {
+    for (let i = out.length - 1; i >= 0; i -= 1) {
+      if (PLATE_LABELS.has(out[i].label) && iou(out[i].box, plate.box) > 0.1) out.splice(i, 1);
     }
+    out.push(plate);
   }
   return out;
 }
@@ -228,6 +268,8 @@ const PLATE_CROP_PADDING = 0.12;
 const HOTSPOT_WIDTH = 240;
 /** 「白い」とみなす明るさ（0〜1） */
 const WHITE_COLUMN_THRESHOLD = 0.45;
+/** プレート内の文字らしい暗い画素の最小割合（白いだけの看板・路面を除く） */
+const MIN_PLATE_DARK_FRACTION = 0.02;
 
 function collectLines(data: {
   blocks?: { paragraphs?: { lines?: OcrLine[] }[] }[] | null;
@@ -266,7 +308,7 @@ function linesToDetections(
     if (x1 - x0 < 4 || y1 - y0 < 4) continue;
 
     out.push({
-      category: 'secret',
+      category: PLATE_LABELS.has(label) ? 'plate' : 'secret',
       label,
       box: {
         x: x0 / width,
@@ -290,6 +332,17 @@ function iou(a: { x: number; y: number; w: number; h: number }, b: typeof a): nu
   return union > 0 ? inter / union : 0;
 }
 
+/** 小さい箱が大きい箱にどれだけ含まれるか（0〜1） */
+function containment(small: { x: number; y: number; w: number; h: number }, big: typeof small): number {
+  const x0 = Math.max(small.x, big.x);
+  const y0 = Math.max(small.y, big.y);
+  const x1 = Math.min(small.x + small.w, big.x + big.w);
+  const y1 = Math.min(small.y + small.h, big.y + big.h);
+  if (x1 <= x0 || y1 <= y0) return 0;
+  const area = small.w * small.h;
+  return area > 0 ? ((x1 - x0) * (y1 - y0)) / area : 0;
+}
+
 type Box = { x: number; y: number; w: number; h: number };
 
 function clampBox(box: Box): Box {
@@ -304,11 +357,12 @@ function clampBox(box: Box): Box {
 }
 
 /**
- * 白くて明るい「プレートらしい領域」を探す。
+ * 白くて明るい「プレートらしい領域」を最大 max 個探す。
  * 明るさのムラに強いよう、まず小さい窓で白い部分を探し、
  * その窓を横・縦に広げてプレート全体の矩形を求める。
+ * 見つかった領域を除外しながら繰り返すことで、1枚に複数台写っていても拾う。
  */
-function findPlateRegion(raster: Raster): Box | null {
+function findPlateRegions(raster: Raster, max = 4): Box[] {
   const width = raster.width;
   const height = raster.height;
   const sw = HOTSPOT_WIDTH;
@@ -317,14 +371,19 @@ function findPlateRegion(raster: Raster): Box | null {
   small.width = sw;
   small.height = sh;
   const ctx = small.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return null;
+  if (!ctx) return [];
   ctx.drawImage(raster, 0, 0, sw, sh);
   const px = ctx.getImageData(0, 0, sw, sh).data;
 
-  // 白さ = 3 チャンネルの最小値（プレートは無彩色で明るい）
+  // 白さ = 無彩色の明るさ。黄ナンバー（軽自動車）は R,G が高く B が低いので別途評価する。
   const white = new Float32Array(sw * sh);
   for (let i = 0; i < sw * sh; i += 1) {
-    white[i] = Math.min(px[i * 4], px[i * 4 + 1], px[i * 4 + 2]) / 255;
+    const r = px[i * 4] / 255;
+    const g = px[i * 4 + 1] / 255;
+    const b = px[i * 4 + 2] / 255;
+    const neutral = Math.min(r, g, b);
+    const yellow = Math.min(r, g) * (1 - b);
+    white[i] = Math.max(neutral, yellow);
   }
 
   const iw = sw + 1;
@@ -339,46 +398,84 @@ function findPlateRegion(raster: Raster): Box | null {
   const sumRect = (x0: number, y0: number, x1: number, y1: number) =>
     integral[y1 * iw + x1] - integral[y0 * iw + x1] - integral[y1 * iw + x0] + integral[y0 * iw + x0];
 
-  // 1) プレートの比率（横長）で、最も白い小窓を探す
-  let seed = { score: 0, x: 0, y: 0, w: 0, h: 0 };
-  for (let wf = 0.1; wf <= 0.4; wf += 0.02) {
-    const bw = Math.round(sw * wf);
-    const bh = Math.max(4, Math.round(bw / PLATE_ASPECT));
-    const stepX = Math.max(2, Math.round(bw / 4));
-    const stepY = Math.max(2, Math.round(bh / 2));
-    for (let y0 = 0; y0 + bh <= sh; y0 += stepY) {
-      for (let x0 = 0; x0 + bw <= sw; x0 += stepX) {
-        const score = sumRect(x0, y0, x0 + bw, y0 + bh) / (bw * bh);
-        if (score > seed.score) seed = { score, x: x0, y: y0, w: bw, h: bh };
+  const found: Box[] = [];
+  const blocked: Box[] = [];
+
+  for (let attempt = 0; attempt < 16 && found.length < max; attempt += 1) {
+    let seed = { score: 0, x: 0, y: 0, w: 0, h: 0 };
+    let seedBox: Box = { x: 0, y: 0, w: 0, h: 0 };
+    for (let wf = 0.1; wf <= 0.4; wf += 0.02) {
+      const bw = Math.round(sw * wf);
+      const bh = Math.max(4, Math.round(bw / PLATE_ASPECT));
+      const stepX = Math.max(2, Math.round(bw / 4));
+      const stepY = Math.max(2, Math.round(bh / 2));
+      for (let y0 = 0; y0 + bh <= sh; y0 += stepY) {
+        for (let x0 = 0; x0 + bw <= sw; x0 += stepX) {
+          const cand: Box = { x: x0 / sw, y: y0 / sh, w: bw / sw, h: bh / sh };
+          if (blocked.some((b) => iou(cand, b) > 0.1)) continue;
+          const score = sumRect(x0, y0, x0 + bw, y0 + bh) / (bw * bh);
+          if (score > seed.score) {
+            seed = { score, x: x0, y: y0, w: bw, h: bh };
+            seedBox = cand;
+          }
+        }
       }
     }
+    if (seed.score < 0.55) break;
+
+    // 種の帯の中で、白い列が続く範囲まで左右に広げる＝プレートの横幅
+    const bandY0 = seed.y;
+    const bandY1 = seed.y + seed.h;
+    const bandH = Math.max(1, bandY1 - bandY0);
+    const colMean: number[] = [];
+    for (let x = 0; x < sw; x += 1) colMean.push(sumRect(x, bandY0, x + 1, bandY1) / bandH);
+    const run = growRange(colMean, seed.x, seed.x + seed.w - 1, WHITE_COLUMN_THRESHOLD, 5);
+
+    // その横幅の中で、白い行が続く範囲まで上下に広げる＝プレートの高さ
+    const rowMean: number[] = [];
+    for (let y = 0; y < sh; y += 1)
+      rowMean.push(sumRect(run[0], y, run[1] + 1, y + 1) / (run[1] + 1 - run[0]));
+    const rows = growRange(rowMean, bandY0, bandY1 - 1, WHITE_COLUMN_THRESHOLD, 3);
+
+    const box: Box = {
+      x: run[0] / sw,
+      y: rows[0] / sh,
+      w: (run[1] + 1 - run[0]) / sw,
+      h: (rows[1] + 1 - rows[0]) / sh,
+    };
+    // 極端な形（画面の大半・細すぎる帯）はプレートとみなさない
+    const aspect = (box.w * width) / (box.h * height);
+    if (box.w < 0.08 || box.w > 0.9 || box.h < 0.01 || box.h > 0.5 || aspect < 1.3 || aspect > 4.5) {
+      blocked.push(seedBox);
+      continue;
+    }
+    // 別の種から同じプレートに育った場合は重複として捨てる
+    if (found.some((f) => iou(f, box) > 0.5)) {
+      blocked.push(seedBox);
+      continue;
+    }
+    // 白いだけの領域（看板・路面・ボディの反射）を除外する。
+    // プレートには必ず暗い文字が乗っている。
+    const px0 = Math.max(0, Math.floor(box.x * sw));
+    const py0 = Math.max(0, Math.floor(box.y * sh));
+    const px1 = Math.min(sw, Math.ceil((box.x + box.w) * sw));
+    const py1 = Math.min(sh, Math.ceil((box.y + box.h) * sh));
+    let dark = 0;
+    let total = 0;
+    for (let y = py0; y < py1; y += 1) {
+      for (let x = px0; x < px1; x += 1) {
+        total += 1;
+        if (white[y * sw + x] < 0.35) dark += 1;
+      }
+    }
+    if (total === 0 || dark / total < MIN_PLATE_DARK_FRACTION) {
+      blocked.push(seedBox);
+      continue;
+    }
+    found.push(box);
+    blocked.push(box);
   }
-  if (seed.score < 0.55) return null;
-
-  // 2) 種の帯の中で、白い列が続く範囲まで左右に広げる＝プレートの横幅
-  const bandY0 = seed.y;
-  const bandY1 = seed.y + seed.h;
-  const bandH = Math.max(1, bandY1 - bandY0);
-  const colMean: number[] = [];
-  for (let x = 0; x < sw; x += 1) colMean.push(sumRect(x, bandY0, x + 1, bandY1) / bandH);
-  const run = growRange(colMean, seed.x, seed.x + seed.w - 1, WHITE_COLUMN_THRESHOLD, 5);
-
-  // 3) その横幅の中で、白い行が続く範囲まで上下に広げる＝プレートの高さ
-  const rowMean: number[] = [];
-  for (let y = 0; y < sh; y += 1) rowMean.push(sumRect(run[0], y, run[1] + 1, y + 1) / (run[1] + 1 - run[0]));
-  const rows = growRange(rowMean, bandY0, bandY1 - 1, WHITE_COLUMN_THRESHOLD, 3);
-
-  const box: Box = {
-    x: run[0] / sw,
-    y: rows[0] / sh,
-    w: (run[1] + 1 - run[0]) / sw,
-    h: (rows[1] + 1 - rows[0]) / sh,
-  };
-  // 極端な形（画面の大半・細すぎる帯）はプレートとみなさない
-  if (box.w < 0.08 || box.w > 0.9 || box.h < 0.01 || box.h > 0.5) return null;
-  const aspect = (box.w * width) / (box.h * height);
-  if (aspect < 1.3 || aspect > 4.5) return null;
-  return box;
+  return found;
 }
 
 /** しきい値を超える範囲を、小さな切れ目（gap 個まで）を許して左右へ広げる */
@@ -448,40 +545,46 @@ function cropForOcr(
 /**
  * 写真からナンバープレートを探す。
  * 明るい矩形（プレート）を切り出して拡大し、番号らしき文字が読めたらその矩形を隠す。
- * 候補は 1 つだけ試して、読めなければ諦める（リトライしない）。
+ * 1枚に複数台写っている場合に備えて、候補は最大4つまで試す。
  */
 async function detectPlatesInPhoto(
   worker: TesseractWorker,
   raster: Raster,
   onProgress?: Progress,
+  confirmedLines: Box[] = [],
 ): Promise<Detection[]> {
-  const region = findPlateRegion(raster);
-  if (!region) return [];
+  const regions = findPlateRegions(raster);
+  if (!regions.length) return [];
 
-  const crop = cropForOcr(raster, padBox(region, PLATE_CROP_PADDING), PLATE_CROP_TARGET_PX);
-  if (!crop) return [];
+  const out: Detection[] = [];
+  for (const region of regions) {
+    // 全体 OCR で既にプレートの文字が読めているなら、プレート領域は確定。
+    // 切り出しの再 OCR（0.3〜0.7秒）は省く。
+    let hit = confirmedLines.some((line) => containment(line, region) >= 0.3);
+    if (!hit) {
+      const crop = cropForOcr(raster, padBox(region, PLATE_CROP_PADDING), PLATE_CROP_TARGET_PX);
+      if (!crop) continue;
 
-  onProgress?.('OCR ナンバープレートを確認中…');
-  try {
-    await worker.setParameters({ tessedit_pageseg_mode: PSM_SINGLE_BLOCK });
-    const { data } = await worker.recognize(crop, {}, { blocks: true, text: true });
-    const hit = collectLines(data).some((line) => {
-      const text = (line.text ?? '').replace(/\s+/g, ' ').trim();
-      if (!text) return false;
-      const label = matchSecret(text);
-      return label !== null && PLATE_LABELS.has(label);
-    });
-    if (!hit) return [];
-  } finally {
-    await worker.setParameters({ tessedit_pageseg_mode: PSM_AUTO });
+      onProgress?.('OCR ナンバープレートを確認中…');
+      try {
+        await worker.setParameters({ tessedit_pageseg_mode: PSM_SINGLE_BLOCK });
+        const { data } = await worker.recognize(crop, {}, { blocks: true, text: true });
+        hit = collectLines(data).some((line) => {
+          const text = (line.text ?? '').replace(/\s+/g, ' ').trim();
+          if (!text) return false;
+          const label = matchSecret(text);
+          return label !== null && PLATE_LABELS.has(label);
+        });
+      } catch {
+        // 1つの候補で失敗しても、他の候補・文字検出は続ける
+        hit = false;
+      } finally {
+        await worker.setParameters({ tessedit_pageseg_mode: PSM_AUTO });
+      }
+    }
+
+    // 数字が読めた = プレートとみなし、プレート全体を隠す
+    if (hit) out.push({ category: 'plate', label: 'ナンバープレート', box: region });
   }
-
-  // 数字が読めた = プレートとみなし、プレート全体を隠す
-  return [
-    {
-      category: 'secret',
-      label: 'ナンバープレート',
-      box: region,
-    },
-  ];
+  return out;
 }

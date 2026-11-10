@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rm 検出評価</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #12141a;
+        color: #e7e9ee;
+        margin: 0;
+        padding: 16px 20px 60px;
+      }
+      h1 { font-size: 18px; margin: 0 0 8px; }
+      #status { color: #9aa3b2; font-size: 13px; min-height: 1.4em; }
+      #summary {
+        border-collapse: collapse;
+        margin: 12px 0 20px;
+        font-size: 13px;
+      }
+      #summary th,
+      #summary td {
+        border: 1px solid #2c3140;
+        padding: 4px 10px;
+        text-align: right;
+      }
+      #summary th:first-child,
+      #summary td:first-child { text-align: left; }
+      #summary tr.bad td { color: #ff8a80; }
+      #images { display: grid; grid-template-columns: repeat(auto-fill, 460px); gap: 16px; }
+      figure { margin: 0; background: #1a1d26; border: 1px solid #2c3140; border-radius: 8px; padding: 8px; }
+      figcaption { font-size: 12px; color: #9aa3b2; margin-bottom: 6px; word-break: break-all; }
+      figcaption b { color: #e7e9ee; }
+      canvas { width: 100%; height: auto; display: block; border-radius: 4px; }
+      .err { color: #ff8a80; }
+    </style>
+  </head>
+  <body>
+    <h1>rm 検出評価（ブラウザ内のみ）</h1>
+    <div id="status">待機中…</div>
+    <div id="summaryHost"></div>
+    <div id="images"></div>
+    <script type="module" src="./test-eval/eval.ts"></script>
+  </body>
+</html>
