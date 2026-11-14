@@ -372,7 +372,16 @@ export class App {
 
   private async runDetect(targets: PhotoDoc[]): Promise<void> {
     if (this.busy) return;
-    const settings = this.settings();
+    const notes: string[] = [];
+    const base = this.settings();
+    // 進捗は逐次表示しつつ、エラー文言は最後のメッセージにも残す
+    const settings = {
+      ...base,
+      onProgress: (message: string) => {
+        notes.push(message);
+        this.setDetectStatus(message);
+      },
+    };
     if (settings.provider === 'ollama' && !settings.ollamaEndpoint.trim()) {
       this.setDetectStatus('Ollama のエンドポイントを入力してください', 'error');
       return;
@@ -406,10 +415,11 @@ export class App {
             '0 か所でした。「文字も検出（OCR）」をONにすると、ナンバープレートや API キーも探します',
           );
         } else {
-          this.setDetectStatus(
-            `${added} か所を追加しました（顔 ${tally('face')}・プレート ${tally('plate')}・文字 ${tally('secret')}）`,
-            'ok',
+          const warn = notes.find(
+            (m) => m.includes('読み込めませんでした') || m.includes('失敗') || m.includes('エラー'),
           );
+          const summary = `${added} か所を追加しました（顔 ${tally('face')}・プレート ${tally('plate')}・文字 ${tally('secret')}）`;
+          this.setDetectStatus(warn ? `${summary} / ${warn}` : summary, warn ? 'error' : 'ok');
         }
         if (doc.id === this.currentId) {
           this.editor.refresh();
