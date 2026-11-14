@@ -398,7 +398,19 @@ export class App {
         doc.status = 'ready';
         doc.lastError = undefined;
         doc.verified = false;
-        this.setDetectStatus(`${added} か所を追加しました（${doc.name}）`, 'ok');
+        const tally = (category: Detection['category']): number =>
+          found.filter((x) => x.category === category).length;
+        if (added === 0 && !settings.ocr) {
+          // プレート・機密文字列は OCR 経路でのみ検出する
+          this.setDetectStatus(
+            '0 か所でした。「文字も検出（OCR）」をONにすると、ナンバープレートや API キーも探します',
+          );
+        } else {
+          this.setDetectStatus(
+            `${added} か所を追加しました（顔 ${tally('face')}・プレート ${tally('plate')}・文字 ${tally('secret')}）`,
+            'ok',
+          );
+        }
         if (doc.id === this.currentId) {
           this.editor.refresh();
           this.dom.chkVerified.checked = false;

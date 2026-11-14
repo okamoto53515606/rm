@@ -307,27 +307,46 @@ type FaceLandmarkerLike = {
 };
 
 let landmarkerPromise: Promise<FaceLandmarkerLike> | null = null;
+let cpuLandmarkerPromise: Promise<FaceLandmarkerLike> | null = null;
+// WebGL(GPU) の推論が結果を返さない環境があるため、0 件だったら CPU に切り替える
+let useCpuOnly = false;
+
+async function createLandmarker(delegate: 'GPU' | 'CPU'): Promise<FaceLandmarkerLike> {
+  const { FilesetResolver, FaceLandmarker } = await import('@mediapipe/tasks-vision');
+  const base = new URL('./', document.baseURI).href;
+  const fileset = await FilesetResolver.forVisionTasks(new URL('wasm', base).href);
+  const options = {
+    baseOptions: {
+      modelAssetPath: new URL('models/face_landmarker.task', base).href,
+      delegate,
+    },
+    runningMode: 'IMAGE' as const,
+    numFaces: 10,
+    minFaceDetectionConfidence: 0.35,
+    minFacePresenceConfidence: 0.35,
+  };
+  return (await FaceLandmarker.createFromOptions(fileset, options)) as unknown as FaceLandmarkerLike;
+}
+
+async function getCpuLandmarker(): Promise<FaceLandmarkerLike> {
+  if (!cpuLandmarkerPromise) {
+    cpuLandmarkerPromise = createLandmarker('CPU').catch((err) => {
+      cpuLandmarkerPromise = null;
+      throw err;
+    });
+  }
+  return cpuLandmarkerPromise;
+}
 
 async function getLandmarker(): Promise<FaceLandmarkerLike> {
+  if (useCpuOnly) return getCpuLandmarker();
   if (!landmarkerPromise) {
     landmarkerPromise = (async () => {
-      const { FilesetResolver, FaceLandmarker } = await import('@mediapipe/tasks-vision');
-      const base = new URL('./', document.baseURI).href;
-      const fileset = await FilesetResolver.forVisionTasks(new URL('wasm', base).href);
-      const options = (delegate: 'GPU' | 'CPU') => ({
-        baseOptions: {
-          modelAssetPath: new URL('models/face_landmarker.task', base).href,
-          delegate,
-        },
-        runningMode: 'IMAGE' as const,
-        numFaces: 10,
-        minFaceDetectionConfidence: 0.35,
-        minFacePresenceConfidence: 0.35,
-      });
       try {
-        return (await FaceLandmarker.createFromOptions(fileset, options('GPU'))) as unknown as FaceLandmarkerLike;
+        return await createLandmarker('GPU');
       } catch {
-        return (await FaceLandmarker.createFromOptions(fileset, options('CPU'))) as unknown as FaceLandmarkerLike;
+        useCpuOnly = true;
+        return await getCpuLandmarker();
       }
     })().catch((err) => {
       landmarkerPromise = null;
@@ -387,6 +406,16 @@ function needsTiledFaces(raster: Raster, faces: Detection[]): boolean {
   return Math.min(...faces.map((f) => f.box.w)) < 0.2;
 }
 
+/** 集合写真では 1024px への縮小で小さい顔が落ちるため、必要なら分割して拾い直す */
+function withTiledFaces(
+  raster: Raster,
+  faces: Detection[],
+  landmarker: FaceLandmarkerLike,
+): Detection[] {
+  if (!needsTiledFaces(raster, faces)) return dedupe(faces);
+  return dedupe([...faces, ...detectFacesTiled(raster, landmarker)]);
+}
+
 function detectFacesTiled(raster: Raster, landmarker: FaceLandmarkerLike): Detection[] {
   const W = raster.width;
   const H = raster.height;
@@ -426,9 +455,19 @@ function detectFacesTiled(raster: Raster, landmarker: FaceLandmarkerLike): Detec
 async function detectFacesLocal(raster: Raster): Promise<Detection[]> {
   const landmarker = await getLandmarker();
   const full = detectionsFromLandmarks(landmarker.detect(downscale(raster, 1024)), (x, y) => ({ x, y }));
-  if (!needsTiledFaces(raster, full)) return dedupe(full);
-  // 集合写真では 1024px への縮小で小さい顔が落ちるため、分割して拾い直す
-  return dedupe([...full, ...detectFacesTiled(raster, landmarker)]);
+  if (full.length) return withTiledFaces(raster, full, landmarker);
+
+  // GPU で 0 件だった場合、環境によっては推論が結果を返していないことがある。
+  // CPU で 1 回だけ試し、顔が取れたら以降は CPU を使う。
+  if (!useCpuOnly) {
+    const cpu = await getCpuLandmarker();
+    const retry = detectionsFromLandmarks(cpu.detect(downscale(raster, 1024)), (x, y) => ({ x, y }));
+    if (retry.length) {
+      useCpuOnly = true;
+      return withTiledFaces(raster, retry, cpu);
+    }
+  }
+  return [];
 }
 
 // ===== 入口 =====
