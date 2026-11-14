@@ -12,7 +12,8 @@
     "prepare:assets": "node scripts/prepare-assets.mjs",
     "test:eval": "node scripts/eval.mjs",
     "test:eval:gen": "node scripts/gen-test-images.mjs",
-    "test:compare": "node scripts/compare.mjs"
+    "test:compare": "node scripts/compare.mjs",
+    "gen:og": "node scripts/gen-og.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.2.2",

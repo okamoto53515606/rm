@@ -78,6 +78,7 @@ npm install
 npm run dev      # 開発サーバー
 npm run build    # dist/ へ本番ビルド
 npm run preview  # ビルド結果の確認
+npm run gen:og   # OGP 画像（public/og.jpg）を再生成
 ```
 
 **ネットにつながない使い方**: 「ブラウザ内（無通信）」を選べば、顔も文字も端末内で検出され、画像も一切送信しません。
