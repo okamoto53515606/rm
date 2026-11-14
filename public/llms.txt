@@ -1,0 +1,36 @@
+# rm
+
+> rm は、写真やスクリーンショットに写った顔・ナンバープレート・API キーなどの機密文字列を、画像を外部に送信せずブラウザ内で検出し、モザイク・ぼかし・黒塗りで隠せる無料の Web ツールです。
+
+- 提供: https://rm.okamomedia.tokyo/
+- 料金: 無料（MIT ライセンス・ソースコード公開）
+- 処理場所: ブラウザ内（WebAssembly）。通信先は CSP の connect-src で localhost に限定
+- 対応形式: JPEG / PNG / WebP / GIF（先頭フレーム）/ BMP / AVIF / HEIC
+- 出力: JPEG（複数枚は ZIP）。EXIF（GPS・撮影日時・機種名）は削除される
+- 想定環境: PC のブラウザ（Chrome / Edge / Safari / Firefox）
+- 会員登録・インストール: 不要
+
+## 主な機能
+
+- 顔の検出（MediaPipe FaceLandmarker、478 ランドマーク）
+- ナンバープレートの検出（ローカル OCR と、明るい横長領域の探索）
+- 機密文字列の検出（Tesseract.js と正規表現）: API キー・トークン・パスワード・秘密鍵・メールアドレス・IP アドレス・ローカルパス・ターミナルのプロンプト行
+- 手動マスク: 矩形・楕円・多角形
+- 隠し方: モザイク＋ぼかし / モザイク / ぼかし / 黒塗り
+- 複数枚の一括処理と ZIP 書き出し
+- 書き出し前の目視確認チェック（未確認のまま保存しようとすると警告）
+
+## 実測値
+
+- 顔検出: 1 枚あたり約 0.3 秒
+- 文字検出込み: 1 枚 0.5〜2 秒（4000px 級は 2 秒前後）
+- 初回読み込み: 約 38MB（顔モデルと OCR。以後はキャッシュ）
+- 検出精度: 14 枚・正解 25 個の評価で再現率 96% / 適合率 100%
+
+## ページ
+
+- [アプリ](https://rm.okamomedia.tokyo/)
+- [スクリーンショットの API キーを隠す方法](https://rm.okamomedia.tokyo/hide-api-key.html)
+- [プライバシーポリシー](https://rm.okamomedia.tokyo/privacy.html)
+- [利用規約](https://rm.okamomedia.tokyo/terms.html)
+- [ソースコード（GitHub）](https://github.com/okamoto53515606/rm)

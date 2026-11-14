@@ -6,24 +6,95 @@
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#08080a" />
-    <meta name="description" content="写真の顔・ナンバープレート・APIキーなどを、ブラウザの中だけで隠せる無料ツール。画像は外部に送信しません。PC 専用。" />
-    <title>rm — 写真の顔・ナンバー・秘密をブラウザで隠す</title>
+    <meta name="description" content="顔・ナンバープレート・APIキー・パスワードを写真やスクショから自動検出し、モザイクや黒塗りで隠す無料ツール。画像はブラウザの外に出ず、EXIF（GPS）も削除します。インストール不要。" />
+    <title>写真・スクショの顔とAPIキーを隠す無料ツール｜rm</title>
+    <link rel="canonical" href="https://rm.okamomedia.tokyo/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="rm" />
     <meta property="og:locale" content="ja_JP" />
-    <meta property="og:title" content="rm — 写真の顔・ナンバー・秘密をブラウザで隠す" />
-    <meta property="og:description" content="写真の顔・ナンバープレート・APIキー・メール・パスを、ブラウザの中だけで検出して隠す無料ツール。画像は外部に送信しません。" />
+    <meta property="og:title" content="写真・スクショの顔とAPIキーを隠す無料ツール｜rm" />
+    <meta property="og:description" content="顔・ナンバープレート・APIキー・パスワードを自動検出してモザイク・黒塗り。画像はブラウザの外に出ず、EXIF（GPS）も削除します。" />
     <meta property="og:url" content="https://rm.okamomedia.tokyo/" />
     <meta property="og:image" content="https://rm.okamomedia.tokyo/og.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="rm の画面。写真の顔がモザイクで隠れている" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="rm — 写真の顔・ナンバー・秘密をブラウザで隠す" />
-    <meta name="twitter:description" content="写真の顔・ナンバープレート・APIキー・メール・パスを、ブラウザの中だけで検出して隠す無料ツール。画像は外部に送信しません。" />
+    <meta name="twitter:title" content="写真・スクショの顔とAPIキーを隠す無料ツール｜rm" />
+    <meta name="twitter:description" content="顔・ナンバープレート・APIキー・パスワードを自動検出してモザイク・黒塗り。画像はブラウザの外に出ず、EXIF（GPS）も削除します。" />
     <meta name="twitter:image" content="https://rm.okamomedia.tokyo/og.jpg" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./src/style.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://rm.okamomedia.tokyo/#website",
+            "url": "https://rm.okamomedia.tokyo/",
+            "name": "rm",
+            "description": "写真とスクショの個人情報をブラウザ内だけで隠す無料ツール",
+            "inLanguage": "ja",
+            "publisher": { "@type": "Organization", "name": "QuickWork", "url": "https://okamomedia.tokyo/" }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://rm.okamomedia.tokyo/#app",
+            "name": "rm",
+            "url": "https://rm.okamomedia.tokyo/",
+            "description": "写真やスクリーンショットの顔・ナンバープレート・APIキーなどを、画像を送信せずブラウザ内で検出して隠せる無料ツール。",
+            "applicationCategory": "MultimediaApplication",
+            "operatingSystem": "Web Browser",
+            "browserRequirements": "Chrome, Edge, Safari, Firefox",
+            "inLanguage": "ja",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" },
+            "license": "https://opensource.org/licenses/MIT",
+            "sameAs": ["https://github.com/okamoto53515606/rm"],
+            "featureList": [
+              "顔・ナンバープレートの自動検出",
+              "APIキー・トークン・パスワード・ローカルパスの検出",
+              "矩形・楕円・多角形の手動マスク",
+              "モザイク・ぼかし・黒塗り",
+              "EXIF（GPS・撮影日時）の削除",
+              "複数枚の一括処理とZIP書き出し",
+              "ブラウザ内処理（画像を送信しない）"
+            ]
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://rm.okamomedia.tokyo/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "無料で使えますか？",
+                "acceptedAnswer": { "@type": "Answer", "text": "無料です。MIT ライセンスでソースコードも公開しています。" }
+              },
+              {
+                "@type": "Question",
+                "name": "会員登録やインストールは必要ですか？",
+                "acceptedAnswer": { "@type": "Answer", "text": "不要です。ページを開いて画像を選ぶだけで使えます。" }
+              },
+              {
+                "@type": "Question",
+                "name": "対応している画像形式は？",
+                "acceptedAnswer": { "@type": "Answer", "text": "JPEG・PNG・WebP・GIF（先頭フレーム）・BMP・AVIF・HEIC を読み込めます。書き出しは JPEG、複数枚のときは ZIP です。" }
+              },
+              {
+                "@type": "Question",
+                "name": "オフラインでも使えますか？",
+                "acceptedAnswer": { "@type": "Answer", "text": "一度読み込んだ後は、ブラウザ内（無通信）モードでオフラインでも動作します。" }
+              },
+              {
+                "@type": "Question",
+                "name": "検出漏れはありますか？",
+                "acceptedAnswer": { "@type": "Answer", "text": "あります。AI の検出は 100% ではないため、確認済みにチェックせず書き出そうとすると警告を表示します。" }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <header class="topbar">
@@ -39,6 +110,8 @@
       <a class="link" href="./terms.html" target="_blank" rel="noopener">利用規約</a>
       <a class="link" href="./privacy.html" target="_blank" rel="noopener">プライバシー</a>
     </header>
+
+    <h1 class="sr-only">写真とスクリーンショットの顔・ナンバープレート・APIキーを、ブラウザ内だけで隠す無料ツール</h1>
 
     <main class="layout">
       <!-- 左：写真一覧 -->
@@ -210,6 +283,97 @@
         <div class="dialog-actions"><button class="primary" value="close">閉じる</button></div>
       </form>
     </dialog>
+
+    <!-- 説明コンテンツ（検索・AI 検索向け。アプリの操作には関与しない） -->
+    <section class="site-info" id="about">
+      <div class="wrap">
+        <h2>できること</h2>
+        <p class="lead">
+          写真やスクリーンショットに写った<strong>顔・ナンバープレート・APIキー</strong>などを、画像を外部に送信せず
+          ブラウザ内で検出し、モザイク・ぼかし・黒塗りで隠せる無料のツールです。書き出した JPEG からは
+          EXIF（GPS・撮影日時・機種名）も削除します。
+        </p>
+        <ul>
+          <li>顔とナンバープレートの自動検出（端末内の AI）</li>
+          <li>スクリーンショットの API キー・トークン・パスワード・秘密鍵・メールアドレス・IP アドレス・ローカルパス・端末プロンプトの検出（ローカル OCR）</li>
+          <li>矩形・楕円・多角形の手動マスク（移動・リサイズ・取り消し）</li>
+          <li>隠し方: モザイク＋ぼかし / モザイク / ぼかし / 黒塗り</li>
+          <li>複数枚の一括処理・ZIP 書き出し・EXIF 削除</li>
+        </ul>
+
+        <h2>スクリーンショットの API キーを隠すには</h2>
+        <p>
+          「文字も検出（OCR）」をオンにして検出すると、API キーやトークンらしい文字列の行が枠で示されます。
+          枠を確認し、黒塗りを選んで保存すれば、画像をどこにも送信せずに隠せます。
+        </p>
+        <p><a href="./hide-api-key.html">スクリーンショットの API キーを隠す手順（5 ステップ）→</a></p>
+
+        <h2>写真の顔・ナンバープレートを隠すには</h2>
+        <p>
+          ブラウザ内の顔検出（478 ランドマーク）が顔を、プレート検出がナンバープレートを枠で示します。
+          集合写真では小さい顔を分割して再検出します。検出した枠はドラッグで移動でき、四隅のハンドルで大きさを変えられます。
+        </p>
+
+        <h2>画像はサーバーに送られますか</h2>
+        <p>
+          送られません。検出もマスクも書き出しもブラウザ内（WebAssembly）で完結し、画像が当サイトのサーバーを
+          通ることはありません。通信先は CloudFront の CSP（<code>connect-src</code>）で localhost に限定しており、
+          外部サーバーへ送信することは技術的にできません。アクセス解析・Cookie・外部フォント・外部 CDN も使っていません。
+        </p>
+
+        <h2>EXIF（GPS）は残りますか</h2>
+        <p>
+          残りません。書き出しは Canvas で JPEG を作り直すため、撮影場所・撮影日時・機種名は含まれません。
+          実測では GPS 付き JPEG の <code>exif=true, gps=true</code> が、書き出し後に <code>exif=false, gps=false</code> になります。
+        </p>
+
+        <h2>スマートフォンでも使えますか</h2>
+        <p>
+          現在は PC のブラウザを想定しています。大きな写真とローカル AI（初回で約 38MB）を扱うためで、
+          スマートフォンでの動作は保証していません。スマートフォンから試す場合は、まず 1 枚だけでお試しください。
+        </p>
+
+        <h2>検出精度と処理時間</h2>
+        <p>
+          自動検出は 100% ではありません。合成画像と実写真 14 枚・正解 25 個の評価で、再現率 96%・適合率 100% でした。
+          処理時間は顔が約 0.3 秒、文字検出込みで 1 枚 0.5〜2 秒（4000px 級は 2 秒前後）です。
+        </p>
+        <p>
+          小さい・傾いたナンバープレート、強いぼけ、夜間の白飛びなどは検出できないことがあります。
+          自動検出に頼らず、手動の矩形も併用してください。
+        </p>
+
+        <h2>よくある質問</h2>
+        <details>
+          <summary>無料で使えますか？</summary>
+          <p>無料です。MIT ライセンスでソースコードも公開しています。</p>
+        </details>
+        <details>
+          <summary>会員登録やインストールは必要ですか？</summary>
+          <p>不要です。ページを開いて画像を選ぶだけで使えます。</p>
+        </details>
+        <details>
+          <summary>対応している画像形式は？</summary>
+          <p>JPEG・PNG・WebP・GIF（先頭フレーム）・BMP・AVIF・HEIC を読み込めます。書き出しは JPEG、複数枚のときは ZIP です。</p>
+        </details>
+        <details>
+          <summary>オフラインでも使えますか？</summary>
+          <p>一度読み込んだ後は、ブラウザ内（無通信）モードでオフラインでも動作します。</p>
+        </details>
+        <details>
+          <summary>検出漏れはありますか？</summary>
+          <p>あります。AI の検出は 100% ではないため、確認済みにチェックせず書き出そうとすると警告を表示します。</p>
+        </details>
+
+        <nav>
+          <a href="./hide-api-key.html">APIキーを隠す</a>
+          <a href="./terms.html">利用規約</a>
+          <a href="./privacy.html">プライバシーポリシー</a>
+          <a href="https://github.com/okamoto53515606/rm" target="_blank" rel="noopener">ソースコード（MIT）</a>
+        </nav>
+        <p class="updated">最終更新: 2026年11月14日</p>
+      </div>
+    </section>
 
     <footer class="footer">
       <span class="muted">© 2026 QuickWork. All Rights Reserved.</span>

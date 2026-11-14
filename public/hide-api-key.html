@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="color-scheme" content="dark" />
+    <title>スクリーンショットのAPIキーを隠す方法｜画像を送信せずブラウザ内で処理 — rm</title>
+    <meta name="description" content="スクショに写った API キー・パスワード・ローカルパスを、画像をどこにも送信せずブラウザ内で検出して黒塗りする手順。無料・登録不要・インストール不要で、EXIF（GPS）も削除します。" />
+    <link rel="canonical" href="https://rm.okamomedia.tokyo/hide-api-key.html" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="rm" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:title" content="スクリーンショットのAPIキーを隠す方法｜rm" />
+    <meta property="og:description" content="画像を送信せずブラウザ内で OCR し、API キー・パスワード・ローカルパスを検出して黒塗りする手順。" />
+    <meta property="og:url" content="https://rm.okamomedia.tokyo/hide-api-key.html" />
+    <meta property="og:image" content="https://rm.okamomedia.tokyo/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./legal.css" />
+    <style>
+      table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13.5px; }
+      th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
+      th { background: #1a1a20; font-weight: 600; }
+      details { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 8px 0; background: #17171b; }
+      summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+      .cta { margin: 26px 0 8px; }
+      .cta a {
+        display: inline-block; background: var(--accent); color: #0a0a0f;
+        font-weight: 700; padding: 11px 20px; border-radius: 8px; text-decoration: none;
+      }
+    </style>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebPage",
+            "@id": "https://rm.okamomedia.tokyo/hide-api-key.html#page",
+            "url": "https://rm.okamomedia.tokyo/hide-api-key.html",
+            "name": "スクリーンショットのAPIキーを隠す方法",
+            "inLanguage": "ja",
+            "dateModified": "2026-11-14",
+            "isPartOf": {
+              "@type": "WebSite",
+              "@id": "https://rm.okamomedia.tokyo/#website",
+              "url": "https://rm.okamomedia.tokyo/",
+              "name": "rm"
+            },
+            "about": {
+              "@type": "SoftwareApplication",
+              "name": "rm",
+              "applicationCategory": "MultimediaApplication",
+              "operatingSystem": "Web Browser",
+              "offers": { "@type": "Offer", "price": "0", "priceCurrency": "JPY" }
+            }
+          },
+          {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "rm", "item": "https://rm.okamomedia.tokyo/" },
+              { "@type": "ListItem", "position": 2, "name": "スクリーンショットのAPIキーを隠す方法" }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <a href="./">rm</a>
+        <nav>
+          <a href="./">アプリ</a>
+          <a href="./terms.html">利用規約</a>
+          <a href="./privacy.html">プライバシー</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <main>
+        <h1>スクリーンショットの API キーを隠す方法</h1>
+        <p class="meta">最終更新: 2026年11月14日</p>
+
+        <p class="note">
+          結論: スクリーンショットの API キーは、ブラウザ内で文字を読み取って（OCR）該当行を黒塗りすれば、
+          画像をどこにも送信せずに消せます。rm は API キー・トークン・パスワード・秘密鍵・ローカルパスを
+          候補として枠で示し、確認して保存するまでを 1 ページで行えます。
+        </p>
+
+        <h2>1. 手順（5 ステップ）</h2>
+        <ol>
+          <li><a href="./">https://rm.okamomedia.tokyo/</a> を開きます（インストール・会員登録は不要）。</li>
+          <li>スクリーンショットをドロップ、または <code>Ctrl+V</code> で貼り付けます。</li>
+          <li>「検出方法」が <strong>ブラウザ内（無通信）</strong> になっていることを確認し、「文字も検出（OCR）」にチェックを入れます。</li>
+          <li>「この写真を検出」を押すと、機密らしい文字列の行が枠で示されます。</li>
+          <li>枠を確認し、不要な枠は <code>Delete</code>、足りない場所は矩形ツールで追加します。「隠し方」を<strong>黒く塗りつぶし</strong>にして「マスクして保存」を押します。</li>
+        </ol>
+        <p>
+          「この写真は確認済み」にチェックしていないまま保存しようとすると、目視確認を促す警告が出ます。
+          自動検出は候補を出すだけで、最終的な確認は人（あなた）が行う設計です。
+        </p>
+
+        <h2>2. 検出できる文字列</h2>
+        <p>
+          OCR で読み取った行に正規表現を当て、当てはまった行をマスクします。
+          代表的なものは次のとおりです（例はすべて伏せ字・予約済みの値です）。
+        </p>
+        <table>
+          <thead>
+            <tr><th>種類</th><th>例</th><th>補足</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>API キー・トークン</td>
+              <td><code>OPENAI_API_KEY = ...</code> の値</td>
+              <td>主要サービスの接頭辞つきの文字列、JWT、32 文字以上のランダムな文字列</td>
+            </tr>
+            <tr>
+              <td>パスワード・秘密鍵</td>
+              <td><code>PASSWORD=...</code>、<code>-----BEGIN ... PRIVATE KEY-----</code></td>
+              <td>代入行の値。伏せ字や <code>${...}</code> は対象外</td>
+            </tr>
+            <tr>
+              <td>メールアドレス</td>
+              <td><code>user@example.com</code></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>IP アドレス・認証つき URL</td>
+              <td><code>192.0.2.10</code>、<code>https://user:pass@host</code></td>
+              <td>内部 URL・接続文字列を含む</td>
+            </tr>
+            <tr>
+              <td>ローカルパス・端末プロンプト</td>
+              <td><code>/home/user/project</code>、<code>user@host:~/dir$ command</code></td>
+              <td>プロンプトだけの行（コマンドなし）は対象外</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>3. API キーは「黒塗り」を使う</h2>
+        <p>
+          モザイクやぼかしは元の画素情報を弱めるだけで、強度が低いと復元・推測の対象になります。
+          API キーやパスワードなど、漏れると取り返しがつかない情報は<strong>黒塗り（塗りつぶし）</strong>を使ってください。
+          rm の自動検出は、機密文字列に対して黒塗りを初期値として適用します（顔とナンバープレートはモザイク＋ぼかし）。
+        </p>
+
+        <h2>4. 検出できない（苦手な）パターン</h2>
+        <ul>
+          <li>極端に小さい文字、強いぼけ、低コントラストの文字</li>
+          <li>傾きや変形が大きい画面、反射やモアレのある撮影</li>
+          <li>文字ではなく画像として貼り付けられたスクリーンショット</li>
+          <li>OCR の誤認識で文字の一部が欠けている行</li>
+        </ul>
+        <p>
+          自動検出に頼らず、手動の矩形も併用してください。とくに公開範囲の広い記事や資料では、
+          保存前の目視確認を必ず行ってください。
+        </p>
+
+        <h2>5. EXIF（GPS・撮影日時）も一緒に消える</h2>
+        <p>
+          書き出しは Canvas で JPEG を作り直すため、撮影場所（GPS）・撮影日時・機種名などのメタデータは残りません。
+          実測では、GPS 付きの JPEG を入力した場合に <code>exif=true, gps=true</code> が
+          <code>exif=false, gps=false</code> になります。
+        </p>
+
+        <h2>6. よくある質問</h2>
+        <details>
+          <summary>画像はサーバーに送信されますか？</summary>
+          <p>
+            送信されません。検出もマスクも書き出しもブラウザ内で完結します。
+            通信先は CSP（<code>connect-src</code>）で localhost に限定しているため、外部のサーバーへ画像を送ることはできません。
+          </p>
+        </details>
+        <details>
+          <summary>無料ですか？</summary>
+          <p>無料です。MIT ライセンスでソースコードも公開しています。</p>
+        </details>
+        <details>
+          <summary>元の画像は上書きされますか？</summary>
+          <p>上書きされません。保存すると新しいファイルとして書き出されます。</p>
+        </details>
+        <details>
+          <summary>アクセスログは残りますか？</summary>
+          <p>
+            静的ファイルの配信基盤には、一般的なウェブアクセスと同様に IP アドレス・ユーザーエージェント・URL などの
+            運用ログが残る場合があります。画像の中身や編集内容は含まれません。詳細は
+            <a href="./privacy.html">プライバシーポリシー</a> をご覧ください。
+          </p>
+        </details>
+
+        <div class="cta"><a href="./">rm を開く（無料・登録不要）</a></div>
+      </main>
+      <footer>© 2026 QuickWork. All Rights Reserved.</footer>
+    </div>
+  </body>
+</html>

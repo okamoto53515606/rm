@@ -114,13 +114,16 @@ Resources:
           # AWS マネージド: CachingOptimized
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
           ResponseHeadersPolicyId: !Ref SiteHeadersPolicy
+        # SPA ではないので index.html へのフォールバックはしない。
+        # 存在しないパスは 404 ステータス + 404.html を返す（クローラに正しい状態を伝える）。
+        # S3 はキーが無い場合に 403 を返すため、403 も 404 に読み替える。
         CustomErrorResponses:
           - ErrorCode: 403
-            ResponseCode: 200
-            ResponsePagePath: /index.html
+            ResponseCode: 404
+            ResponsePagePath: /404.html
           - ErrorCode: 404
-            ResponseCode: 200
-            ResponsePagePath: /index.html
+            ResponseCode: 404
+            ResponsePagePath: /404.html
         Aliases: !If [HasDomain, [!Ref DomainName], !Ref 'AWS::NoValue']
         ViewerCertificate: !If
           - HasDomain

@@ -65,15 +65,26 @@ SITE_URL=$(aws cloudformation describe-stacks "${AWS_OPTS[@]}" \
 
 # ---- 3. アップロード ----
 echo "[4/5] ファイルを S3 へアップロード..."
-# HTML は毎回検証させる
-aws s3 cp dist/index.html "s3://$BUCKET/index.html" \
-  "${AWS_OPTS[@]}" \
-  --cache-control "no-cache" --content-type "text/html; charset=utf-8"
-for page in terms.html privacy.html; do
-  aws s3 cp "dist/$page" "s3://$BUCKET/$page" \
+# HTML は毎回検証させる（robots.txt / sitemap.xml と同じ扱い）
+for page in dist/*.html; do
+  name=$(basename "$page")
+  aws s3 cp "$page" "s3://$BUCKET/$name" \
     "${AWS_OPTS[@]}" \
     --cache-control "no-cache" --content-type "text/html; charset=utf-8"
 done
+
+# クローラが読むファイル（MIME と短いキャッシュを明示）
+aws s3 cp dist/robots.txt "s3://$BUCKET/robots.txt" \
+  "${AWS_OPTS[@]}" \
+  --cache-control "public, max-age=3600" --content-type "text/plain; charset=utf-8"
+aws s3 cp dist/sitemap.xml "s3://$BUCKET/sitemap.xml" \
+  "${AWS_OPTS[@]}" \
+  --cache-control "public, max-age=3600" --content-type "application/xml"
+if [ -f dist/llms.txt ]; then
+  aws s3 cp dist/llms.txt "s3://$BUCKET/llms.txt" \
+    "${AWS_OPTS[@]}" \
+    --cache-control "public, max-age=3600" --content-type "text/plain; charset=utf-8"
+fi
 
 # OGP 画像（SNS のクローラが読むため MIME を明示し、キャッシュは短めに）
 aws s3 cp dist/og.jpg "s3://$BUCKET/og.jpg" \
@@ -84,7 +95,8 @@ aws s3 cp dist/og.jpg "s3://$BUCKET/og.jpg" \
 aws s3 sync dist "s3://$BUCKET" \
   "${AWS_OPTS[@]}" \
   --delete \
-  --exclude "index.html" --exclude "terms.html" --exclude "privacy.html" \
+  --exclude "*.html" \
+  --exclude "robots.txt" --exclude "sitemap.xml" --exclude "llms.txt" \
   --exclude "og.jpg" \
   --exclude "wasm/*" --exclude "models/*" --exclude "ocr/*" \
   --cache-control "public, max-age=31536000, immutable"

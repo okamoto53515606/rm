@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Disallow: /test-image-secret/
+
+# AI 検索・学習系（既定でも許可だが、意図を明示する）
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://rm.okamomedia.tokyo/sitemap.xml
