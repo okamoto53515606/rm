@@ -151,6 +151,15 @@ interface OcrLine {
 let workerPromise: Promise<TesseractWorker> | null = null;
 let progressSink: Progress | undefined;
 
+/** コンソールで localStorage.rmDebug='1' を設定すると段階ごとの件数を出力する */
+function debugEnabled(): boolean {
+  try {
+    return localStorage.getItem('rmDebug') === '1';
+  } catch {
+    return false;
+  }
+}
+
 async function getWorker(): Promise<TesseractWorker> {
   if (!workerPromise) {
     workerPromise = (async () => {
@@ -219,6 +228,7 @@ export async function detectTextLocal(
   onProgress?: Progress,
 ): Promise<Detection[]> {
   progressSink = onProgress;
+  const debug = debugEnabled();
   onProgress?.('OCR エンジンを準備中…');
 
   const canvas = prepareOcrCanvas(raster);
@@ -229,7 +239,23 @@ export async function detectTextLocal(
   onProgress?.('OCR 実行中…');
   const base = await worker.recognize(canvas, {}, { blocks: true, text: true });
 
-  const out = linesToDetections(collectLines(base.data), canvas.width, canvas.height);
+  const lines = collectLines(base.data);
+  const out = linesToDetections(lines, canvas.width, canvas.height);
+
+  if (debug) {
+    // 文字列は出さず、段階ごとの件数だけを出す（ブラウザ差の切り分け用）
+    console.warn(
+      '[rm] ocr',
+      JSON.stringify({
+        raster: [raster.width, raster.height],
+        canvas: [canvas.width, canvas.height],
+        lines: lines.length,
+        maxConf: Math.round(lines.reduce((m, l) => Math.max(m, l.confidence ?? 0), 0)),
+        plateLines: out.filter((d) => PLATE_LABELS.has(d.label)).length,
+        regions: [findPlateRegions(raster).length, findPlateRegions(raster, 2, 0.42).length],
+      }),
+    );
+  }
 
   // ナンバープレートは写真全体では小さすぎて読めないことが多い。
   // また、文字が読めても OCR の行ボックスだけではプレート全体を隠せない。
@@ -567,10 +593,12 @@ async function detectPlatesInPhoto(
   if (!regions.length) return [];
 
   const out: Detection[] = [];
+  const debug = debugEnabled();
   for (const region of regions) {
     // 全体 OCR で既にプレートの文字が読めているなら、プレート領域は確定。
     // 切り出しの再 OCR（0.3〜0.7秒）は省く。
     let hit = confirmedLines.some((line) => containment(line, region) >= 0.3);
+    let cropLines = 0;
     if (!hit) {
       const crop = cropForOcr(raster, padBox(region, PLATE_CROP_PADDING), PLATE_CROP_TARGET_PX);
       if (!crop) continue;
@@ -579,7 +607,9 @@ async function detectPlatesInPhoto(
       try {
         await worker.setParameters({ tessedit_pageseg_mode: PSM_SINGLE_BLOCK });
         const { data } = await worker.recognize(crop, {}, { blocks: true, text: true });
-        hit = collectLines(data).some((line) => {
+        const cropTextLines = collectLines(data);
+        cropLines = cropTextLines.length;
+        hit = cropTextLines.some((line) => {
           const text = (line.text ?? '').replace(/\s+/g, ' ').trim();
           if (!text) return false;
           const label = matchSecret(text);
@@ -591,6 +621,17 @@ async function detectPlatesInPhoto(
       } finally {
         await worker.setParameters({ tessedit_pageseg_mode: PSM_AUTO });
       }
+    }
+
+    if (debug) {
+      console.warn(
+        '[rm] plate',
+        JSON.stringify({
+          box: [region.x, region.y, region.w, region.h].map((n) => Math.round(n * 1000) / 1000),
+          hit,
+          cropLines,
+        }),
+      );
     }
 
     // 数字が読めた = プレートとみなし、プレート全体を隠す

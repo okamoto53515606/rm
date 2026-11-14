@@ -34,12 +34,15 @@ const browser =
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   const errors = [];
+  const debugLogs = [];
   page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`));
   page.on('console', (msg) => {
-    if (msg.type() === 'error') errors.push(`console: ${msg.text()}`);
+    if (msg.text().startsWith('[rm]')) debugLogs.push(msg.text());
+    else if (msg.type() === 'error') errors.push(`console: ${msg.text()}`);
   });
 
   await page.goto(base, { waitUntil: 'load' });
+  await page.evaluate(() => localStorage.setItem('rmDebug', '1'));
   await page.waitForTimeout(500);
   await page.setInputFiles('#fileInput', file);
   await page.waitForTimeout(1500);
@@ -75,6 +78,7 @@ try {
   console.log(`  detail: ${result.detail}`);
   console.log(`  写真: ${JSON.stringify(result.items)}`);
   console.log(`  資源: ${JSON.stringify(result.resources)}`);
+  for (const d of debugLogs) console.log(`  ! ${d}`);
   for (const e of errors.slice(0, 8)) console.log(`  x ${e.slice(0, 220)}`);
 } finally {
   await browser.close();
