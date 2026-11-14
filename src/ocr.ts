@@ -569,6 +569,19 @@ function cropForOcr(
 }
 
 /**
+ * プレートらしい明るい矩形から切り出した文字列かどうか。
+ * 行分割や読み取りがブラウザで少し変わっても拾えるよう、
+ * 「数字が 4〜7 個（区切り記号を挟んでよい）」でも受け付ける。
+ * 領域はすでに「明るい・横長・暗い文字がある」で絞ってある。
+ */
+function looksLikePlateNumber(text: string): boolean {
+  const t = text.replace(/\s+/g, '');
+  if (/\d{2,4}[-−–—－ー‐・.．]\d{2,4}/.test(t)) return true;
+  const digits = t.replace(/\D/g, '');
+  return digits.length >= 4 && digits.length <= 7;
+}
+
+/**
  * 写真からナンバープレートを探す。
  * 明るい矩形（プレート）を切り出して拡大し、番号らしき文字が読めたらその矩形を隠す。
  * 1枚に複数台写っている場合に備えて、候補は最大4つまで試す。
@@ -600,26 +613,37 @@ async function detectPlatesInPhoto(
     let hit = confirmedLines.some((line) => containment(line, region) >= 0.3);
     let cropLines = 0;
     if (!hit) {
-      const crop = cropForOcr(raster, padBox(region, PLATE_CROP_PADDING), PLATE_CROP_TARGET_PX);
-      if (!crop) continue;
+      // 切り出しの大きさで OCR の行分割が変わる（ブラウザ差も出る）ため、
+      // 読めなければもう一段大きい切り出しでも試す。
+      let lastWidth = 0;
+      for (const target of [PLATE_CROP_TARGET_PX, PLATE_CROP_TARGET_PX * 1.8]) {
+        const crop = cropForOcr(raster, padBox(region, PLATE_CROP_PADDING), target);
+        if (!crop) continue;
+        // 前回と同じ大きさになるなら意味がないので打ち切る
+        if (crop.width === lastWidth) break;
+        lastWidth = crop.width;
 
-      onProgress?.('OCR ナンバープレートを確認中…');
-      try {
-        await worker.setParameters({ tessedit_pageseg_mode: PSM_SINGLE_BLOCK });
-        const { data } = await worker.recognize(crop, {}, { blocks: true, text: true });
-        const cropTextLines = collectLines(data);
-        cropLines = cropTextLines.length;
-        hit = cropTextLines.some((line) => {
-          const text = (line.text ?? '').replace(/\s+/g, ' ').trim();
-          if (!text) return false;
-          const label = matchSecret(text);
-          return label !== null && PLATE_LABELS.has(label);
-        });
-      } catch {
-        // 1つの候補で失敗しても、他の候補・文字検出は続ける
-        hit = false;
-      } finally {
-        await worker.setParameters({ tessedit_pageseg_mode: PSM_AUTO });
+        onProgress?.('OCR ナンバープレートを確認中…');
+        try {
+          await worker.setParameters({ tessedit_pageseg_mode: PSM_SINGLE_BLOCK });
+          const { data } = await worker.recognize(crop, {}, { blocks: true, text: true });
+          const cropTextLines = collectLines(data);
+          cropLines += cropTextLines.length;
+          const cropText = cropTextLines.map((l) => l.text ?? '').join(' ');
+          hit =
+            cropTextLines.some((line) => {
+              const text = (line.text ?? '').replace(/\s+/g, ' ').trim();
+              if (!text) return false;
+              const label = matchSecret(text);
+              return label !== null && PLATE_LABELS.has(label);
+            }) || looksLikePlateNumber(cropText);
+        } catch {
+          // 1つの候補で失敗しても、他の候補・文字検出は続ける
+          hit = false;
+        } finally {
+          await worker.setParameters({ tessedit_pageseg_mode: PSM_AUTO });
+        }
+        if (hit) break;
       }
     }
 
