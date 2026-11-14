@@ -166,17 +166,96 @@ function pixelate(
   ctx.imageSmoothingEnabled = prev;
 }
 
+let canvasFilterSupported: boolean | null = null;
+
+/**
+ * `ctx.filter` が実際の描画に反映されるかを測る。
+ * WebKit の一部では値を保持するが描画に無視される。
+ * その状態で「ぼかし」を全体画像で行うと、鮮明な元画像がマスクを上書きしてしまう（＝隠れない）。
+ */
+function supportsCanvasFilter(): boolean {
+  if (canvasFilterSupported !== null) return canvasFilterSupported;
+  try {
+    const src = document.createElement('canvas');
+    src.width = 16;
+    src.height = 1;
+    const sctx = src.getContext('2d');
+    if (!sctx) return (canvasFilterSupported = false);
+    sctx.fillStyle = '#ffffff';
+    sctx.fillRect(0, 0, 8, 1);
+    sctx.fillStyle = '#000000';
+    sctx.fillRect(8, 0, 8, 1);
+
+    const out = document.createElement('canvas');
+    out.width = 16;
+    out.height = 1;
+    const octx = out.getContext('2d', { willReadFrequently: true });
+    if (!octx) return (canvasFilterSupported = false);
+    octx.filter = 'blur(3px)';
+    octx.drawImage(src, 0, 0);
+    const value = octx.getImageData(8, 0, 1, 1).data[0];
+    // 効いていれば境界が中間色になる。効かなければ 0（黒）のまま。
+    canvasFilterSupported = value > 16 && value < 239;
+  } catch {
+    canvasFilterSupported = false;
+  }
+  return canvasFilterSupported;
+}
+
+/** 縮小→拡大でぼかす（ctx.filter が使えない環境向けの代替） */
+function softBlurRegion(
+  ctx: CanvasRenderingContext2D,
+  raster: Raster,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  scale: number,
+  radius: number,
+): void {
+  const k = clamp(Math.round(radius / 3), 3, 14);
+  const tw = Math.max(1, Math.round(w / k));
+  const th = Math.max(1, Math.round(h / k));
+  const tmp = document.createElement('canvas');
+  tmp.width = tw;
+  tmp.height = th;
+  const tctx = tmp.getContext('2d');
+  if (!tctx) return;
+  tctx.imageSmoothingEnabled = true;
+  tctx.imageSmoothingQuality = 'high';
+  tctx.drawImage(raster, x / scale, y / scale, w / scale, h / scale, 0, 0, tw, th);
+
+  const prevSmoothing = ctx.imageSmoothingEnabled;
+  const prevQuality = ctx.imageSmoothingQuality;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(tmp, 0, 0, tw, th, x, y, w, h);
+  ctx.imageSmoothingEnabled = prevSmoothing;
+  ctx.imageSmoothingQuality = prevQuality;
+}
+
 function blurRegion(
   ctx: CanvasRenderingContext2D,
   raster: Raster,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  scale: number,
   outW: number,
   outH: number,
   minSide: number,
 ): void {
   const radius = clamp(minSide * 0.18, 6, 72);
-  ctx.filter = `blur(${radius.toFixed(1)}px)`;
-  ctx.drawImage(raster, 0, 0, outW, outH);
-  ctx.filter = 'none';
+  if (supportsCanvasFilter()) {
+    ctx.filter = `blur(${radius.toFixed(1)}px)`;
+    ctx.drawImage(raster, 0, 0, outW, outH);
+    ctx.filter = 'none';
+    return;
+  }
+  // ctx.filter が効かない環境では、マスク範囲だけを縮小→拡大してぼかす。
+  // （全体画像を描くと、鮮明な元画像でマスクが上書きされてしまう）
+  softBlurRegion(ctx, raster, x, y, w, h, scale, radius);
 }
 
 function applyMask(
@@ -207,12 +286,12 @@ function applyMask(
       pixelate(ctx, raster, x, y, w, h, scale, minSide);
       break;
     case 'blur':
-      blurRegion(ctx, raster, outW, outH, minSide);
+      blurRegion(ctx, raster, x, y, w, h, scale, outW, outH, minSide);
       break;
     case 'mosaic+blur':
     default:
       pixelate(ctx, raster, x, y, w, h, scale, minSide);
-      blurRegion(ctx, raster, outW, outH, minSide);
+      blurRegion(ctx, raster, x, y, w, h, scale, outW, outH, minSide);
       break;
   }
   ctx.restore();

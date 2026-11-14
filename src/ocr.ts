@@ -571,14 +571,12 @@ function cropForOcr(
 /**
  * プレートらしい明るい矩形から切り出した文字列かどうか。
  * 行分割や読み取りがブラウザで少し変わっても拾えるよう、
- * 「数字が 4〜7 個（区切り記号を挟んでよい）」でも受け付ける。
+ * 「数字 2〜4 個＋区切り記号＋数字 2〜4 個」でも受け付ける。
  * 領域はすでに「明るい・横長・暗い文字がある」で絞ってある。
  */
 function looksLikePlateNumber(text: string): boolean {
   const t = text.replace(/\s+/g, '');
-  if (/\d{2,4}[-−–—－ー‐・.．]\d{2,4}/.test(t)) return true;
-  const digits = t.replace(/\D/g, '');
-  return digits.length >= 4 && digits.length <= 7;
+  return /\d{2,4}[-−–—－ー‐・.．]\d{2,4}/.test(t);
 }
 
 /**
