@@ -5,16 +5,26 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { chromium } from 'playwright-core';
+import { chromium, firefox, webkit } from 'playwright-core';
 import { BASE, ROOT, ensureServer, launchBrowser, stopServer } from './test-images-lib.mjs';
 
 const OUT_DIR = path.join(ROOT, 'test-image-secret', 'eval-out');
 const filterArg = process.argv.find((arg) => arg.startsWith('--filter='));
 const filter = filterArg ? filterArg.slice('--filter='.length) : '';
+// ブラウザ差の確認用（既定は chromium）
+const engineName =
+  process.argv.find((arg) => arg.startsWith('--browser='))?.slice('--browser='.length) ?? 'chromium';
+const engine = { chromium, firefox, webkit }[engineName];
+if (!engine) {
+  console.error(`未対応のブラウザ: ${engineName}`);
+  process.exit(1);
+}
+const suffix = engineName === 'chromium' ? '' : `.${engineName}`;
 const url = `${BASE}/eval.html${filter ? `?filter=${encodeURIComponent(filter)}` : ''}`;
 
 const server = await ensureServer();
-const browser = await launchBrowser(chromium);
+const browser =
+  engineName === 'chromium' ? await launchBrowser(chromium) : await engine.launch({ headless: true });
 let exitCode = 0;
 try {
   const page = await browser.newPage({ viewport: { width: 1500, height: 1000 } });
@@ -39,14 +49,18 @@ try {
   if (data?.fatal) throw new Error(`評価ページで致命的なエラー:\n${data.fatal}`);
 
   mkdirSync(OUT_DIR, { recursive: true });
-  writeFileSync(path.join(OUT_DIR, 'report.json'), JSON.stringify(data, null, 2) + '\n');
+  writeFileSync(
+    path.join(OUT_DIR, `report${suffix}.json`),
+    JSON.stringify(data, null, 2) + '\n',
+  );
   for (const [id, dataUrl] of Object.entries(overlays)) {
     const base64 = String(dataUrl).split(',')[1] ?? '';
-    writeFileSync(path.join(OUT_DIR, `${id}.png`), Buffer.from(base64, 'base64'));
+    writeFileSync(path.join(OUT_DIR, `${id}${suffix}.png`), Buffer.from(base64, 'base64'));
   }
 
   print(data);
-  console.log(`\nレポート: ${path.join(OUT_DIR, 'report.json')}`);
+  console.log(`\nブラウザ: ${engineName}`);
+  console.log(`レポート: ${path.join(OUT_DIR, `report${suffix}.json`)}`);
   console.log(`オーバーレイ: ${path.join(OUT_DIR, '*.png')}`);
 } catch (err) {
   exitCode = 1;
