@@ -532,6 +532,10 @@ button.primary.danger { background: var(--danger); color: #14090a; }
   font-size: 11px;
   color: var(--muted);
 }
+.footer .version {
+  font-variant-numeric: tabular-nums;
+  opacity: .8;
+}
 .muted { color: var(--muted); }
 
 /* ---------- キャンバス ---------- */
