@@ -390,11 +390,36 @@ input:focus, select:focus {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 12px;
+  box-shadow: var(--shadow);
+}
+.panel > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.panel > summary::-webkit-details-marker { display: none; }
+.panel > summary::after {
+  content: "";
+  margin-left: auto;
+  width: 7px;
+  height: 7px;
+  margin-right: 2px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform .15s;
+}
+.panel[open] > summary { border-bottom: 1px solid var(--line); }
+.panel[open] > summary::after { transform: rotate(-135deg); }
+.panel-body {
   display: flex;
   flex-direction: column;
   gap: 9px;
-  box-shadow: var(--shadow);
+  padding: 10px 12px 12px;
 }
 .panel h2 {
   margin: 0;
@@ -596,4 +621,56 @@ button.primary.danger { background: var(--danger); color: #14090a; }
   margin-top: 12px;
   font-size: 11.5px;
   color: var(--muted);
+}
+
+/* ---------- 狭い画面（1 カラム） ---------- */
+/* PC 向けのツールだが、スマホで開いたときに横スクロールで
+   何も見えない状態を避けるため、縦に積む。 */
+@media (max-width: 900px) {
+  html,
+  body { height: auto; }
+  body { min-height: 100dvh; }
+
+  .topbar {
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .topbar .badge,
+  .topbar .tagline { display: none; }
+
+  .layout {
+    flex: 0 0 auto;
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    overflow: visible;
+  }
+
+  .sidebar { flex: 0 0 auto; }
+  .photo-list { max-height: 26vh; }
+
+  .editor {
+    flex: 0 0 auto;
+    height: 60dvh;
+    min-height: 320px;
+  }
+
+  .rightbar {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .toolbar { gap: 6px; }
+  .tool { padding: 7px 11px; }
+
+  .site-info { padding: 28px 16px 20px; }
+}
+
+@media (max-width: 560px) {
+  .topbar .link[href$=".html"] { display: none; }
 }

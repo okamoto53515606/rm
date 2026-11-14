@@ -178,8 +178,9 @@
 
       <!-- 右：検出と書き出し -->
       <aside class="rightbar">
-        <section class="panel">
-          <h2>自動検出</h2>
+        <details class="panel" open>
+          <summary class="panel-head"><h2>自動検出</h2></summary>
+          <div class="panel-body">
           <label class="field">
             <span>検出方法</span>
             <select id="selProvider">
@@ -218,10 +219,12 @@
             <button class="secondary" id="btnDetectAll" type="button">すべて検出</button>
           </div>
           <p class="note" id="detectStatus"></p>
-        </section>
+          </div>
+        </details>
 
-        <section class="panel">
-          <h2>書き出し</h2>
+        <details class="panel" open>
+          <summary class="panel-head"><h2>書き出し</h2></summary>
+          <div class="panel-body">
           <label class="field">
             <span>長辺の上限</span>
             <select id="expMaxSide">
@@ -243,10 +246,12 @@
           <p class="note">JPEG に統一し、位置情報などの EXIF は削除して書き出します。</p>
           <button class="primary wide" id="btnExport" type="button">マスクして保存</button>
           <p class="note" id="exportStatus"></p>
-        </section>
+          </div>
+        </details>
 
-        <section class="panel tips">
-          <h2>プライバシー</h2>
+        <details class="panel tips" open>
+          <summary class="panel-head"><h2>プライバシー</h2></summary>
+          <div class="panel-body">
           <ul>
             <li>画像が当サイトのサーバーに送られることはありません。</li>
             <li>Ollama を使うときも、画像はこの PC（localhost）の中だけで処理されます。</li>
@@ -254,7 +259,8 @@
             <li>アクセス解析・Cookie・外部フォントは不使用です。</li>
           </ul>
           <p class="note">AI の検出は 100% ではありません。公開前の目視確認をおすすめします。</p>
-        </section>
+          </div>
+        </details>
       </aside>
     </main>
 
