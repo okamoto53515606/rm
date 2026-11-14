@@ -91,7 +91,7 @@ npm run preview  # ビルド結果の確認
 | 項目 | 取扱い |
 |---|---|
 | 画像 | ブラウザ内で処理。外部のサーバーへ送信しない |
-| 書き出し | Canvas で再エンコードするため、EXIF（GPS・撮影機材・日時）は残らない |
+| 書き出し | Canvas で再エンコードするため、位置情報（GPS）・撮影機材・日時は残らない。ブラウザによっては色空間と画素サイズだけを含む最小の Exif が付く（識別情報は含まない） |
 | アクセス解析 | なし（Cookie・広告・外部フォント・外部CDN も不使用） |
 | 通信先の制限 | CloudFront の **CSP** で localhost 以外への送信をブロック |
 | 配信 | S3 は非公開 + CloudFront OAC。S3 への直接アクセス不可 |
@@ -321,15 +321,22 @@ CNAME 先は `aws cloudformation describe-stacks --stack-name rm --query "Stacks
 
 ### EXIF の実測
 
-GPS 付き JPEG（`exif=true, gps=true`）を入力し、rm で書き出した JPEG を検査しました。
+GPS・機種名・撮影日時を含む JPEG を入力し、rm で書き出した JPEG を検査しました。
 
 ```
-before: {"exif":true,"gps":true}
-after : {"exif":false,"gps":false}
+入力（元写真）: {"exif":true,"identifying":true,"identifyingTags":["Make","Model","Software","DateTime","DateTimeOriginal","MakerNote","LensModel"]}
+Chromium 書き出し: {"exif":false,"gps":false,"identifying":false,"verdict":"Exif なし"}
+Safari(iOS) 書き出し: {"exif":true,"gps":false,"identifying":false,
+                      "tags":["ExifIFD","ColorSpace","PixelXDimension","PixelYDimension"],
+                      "verdict":"識別情報なし（色空間・画素サイズなどのみ）"}
 ```
 
-検査には `node scripts/check-exif.mjs <file.jpg>`（APP1/Exif と GPS IFD を走査）を使用しています。
-Canvas 再エンコード時にメタデータが落ちるため、位置情報・撮影機材・日時は残りません。
+検査には `node scripts/check-exif.mjs <file.jpg>` を使用しています。`exif` の有無だけでなく、
+**識別につながるタグ**（Make / Model / DateTime / GPS / LensModel など）が残っているかを見ます。
+
+- Chromium / Firefox: Canvas 再エンコードで Exif ごと落ちる
+- Safari（iOS）: エンコーダが **色空間（sRGB）と画素サイズだけ**の最小 Exif を付ける。
+  位置情報・撮影日時・機種名は含まれない（`identifying: false`）
 
 ---
 

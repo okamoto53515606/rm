@@ -6,7 +6,7 @@
 - 料金: 無料（MIT ライセンス・ソースコード公開）
 - 処理場所: ブラウザ内（WebAssembly）。通信先は CSP の connect-src で localhost に限定
 - 対応形式: JPEG / PNG / WebP / GIF（先頭フレーム）/ BMP / AVIF / HEIC
-- 出力: JPEG（複数枚は ZIP）。EXIF（GPS・撮影日時・機種名）は削除される
+- 出力: JPEG（複数枚は ZIP）。位置情報・撮影日時・機種名は削除される（Safari では色空間と画素サイズのみの最小 Exif が付く場合がある）
 - 想定環境: PC のブラウザ（Chrome / Edge / Safari / Firefox）
 - 会員登録・インストール: 不要
 

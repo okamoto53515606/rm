@@ -16,3 +16,7 @@ public/ocr/
 
 # テスト用写真
 test-image-secret/
+
+# 実機テストの出力（実写真を含むためコミットしない）
+20261114_iphone_safari/
+*_masked.jpg

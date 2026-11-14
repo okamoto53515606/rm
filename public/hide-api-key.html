@@ -164,6 +164,8 @@
           書き出しは Canvas で JPEG を作り直すため、撮影場所（GPS）・撮影日時・機種名などのメタデータは残りません。
           実測では、GPS 付きの JPEG を入力した場合に <code>exif=true, gps=true</code> が
           <code>exif=false, gps=false</code> になります。
+          Safari（iPhone）では、色空間（sRGB）と画素サイズだけを含む最小の Exif が付きますが、
+          位置情報・撮影日時・機種名は含まれません（<code>node scripts/check-exif.mjs</code> で確認できます）。
         </p>
 
         <h2>6. よくある質問</h2>

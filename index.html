@@ -329,8 +329,9 @@
 
         <h2>EXIF（GPS）は残りますか</h2>
         <p>
-          残りません。書き出しは Canvas で JPEG を作り直すため、撮影場所・撮影日時・機種名は含まれません。
-          実測では GPS 付き JPEG の <code>exif=true, gps=true</code> が、書き出し後に <code>exif=false, gps=false</code> になります。
+          撮影場所（GPS）・撮影日時・機種名は残りません。書き出しは Canvas で JPEG を作り直すためです。
+          実測では GPS 付き JPEG の <code>exif=true, gps=true</code> が、書き出し後に <code>exif=false, gps=false</code> になります（Chromium）。
+          Safari（iOS）では、色空間（sRGB）と画素サイズだけを含む最小の Exif が付きますが、位置情報・撮影日時・機種名は含まれません。
         </p>
 
         <h2>スマートフォンでも使えますか</h2>
