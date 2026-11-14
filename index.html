@@ -6,14 +6,14 @@
     <meta name="referrer" content="no-referrer" />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#08080a" />
-    <meta name="description" content="顔・ナンバープレート・APIキー・パスワードを写真やスクショから自動検出し、モザイクや黒塗りで隠す無料ツール。画像はブラウザの外に出ず、EXIF（GPS）も削除します。インストール不要。" />
+    <meta name="description" content="写真の顔と、スクショのAPIキー・パスワードを自動検出してモザイク・黒塗り。画像はブラウザの外に出ず、EXIF（GPS）も削除します。ナンバープレートにも対応。" />
     <title>写真・スクショの顔とAPIキーを隠す無料ツール｜rm</title>
     <link rel="canonical" href="https://rm.okamomedia.tokyo/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="rm" />
     <meta property="og:locale" content="ja_JP" />
     <meta property="og:title" content="写真・スクショの顔とAPIキーを隠す無料ツール｜rm" />
-    <meta property="og:description" content="顔・ナンバープレート・APIキー・パスワードを自動検出してモザイク・黒塗り。画像はブラウザの外に出ず、EXIF（GPS）も削除します。" />
+    <meta property="og:description" content="写真の顔と、スクショのAPIキー・パスワードを自動検出してモザイク・黒塗り。画像はブラウザの外に出ず、EXIF（GPS）も削除します。" />
     <meta property="og:url" content="https://rm.okamomedia.tokyo/" />
     <meta property="og:image" content="https://rm.okamomedia.tokyo/og.jpg" />
     <meta property="og:image:width" content="1200" />
@@ -21,7 +21,7 @@
     <meta property="og:image:alt" content="rm の画面。写真の顔がモザイクで隠れている" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="写真・スクショの顔とAPIキーを隠す無料ツール｜rm" />
-    <meta name="twitter:description" content="顔・ナンバープレート・APIキー・パスワードを自動検出してモザイク・黒塗り。画像はブラウザの外に出ず、EXIF（GPS）も削除します。" />
+    <meta name="twitter:description" content="写真の顔と、スクショのAPIキー・パスワードを自動検出してモザイク・黒塗り。画像はブラウザの外に出ず、EXIF（GPS）も削除します。" />
     <meta name="twitter:image" content="https://rm.okamomedia.tokyo/og.jpg" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./src/style.css" />
@@ -43,7 +43,7 @@
             "@id": "https://rm.okamomedia.tokyo/#app",
             "name": "rm",
             "url": "https://rm.okamomedia.tokyo/",
-            "description": "写真やスクリーンショットの顔・ナンバープレート・APIキーなどを、画像を送信せずブラウザ内で検出して隠せる無料ツール。",
+            "description": "写真の顔と、スクリーンショットの API キー・パスワードを、画像を送信せずブラウザ内で検出して隠せる無料ツール。",
             "applicationCategory": "MultimediaApplication",
             "operatingSystem": "Web Browser",
             "browserRequirements": "Chrome, Edge, Safari, Firefox",
@@ -52,8 +52,9 @@
             "license": "https://opensource.org/licenses/MIT",
             "sameAs": ["https://github.com/okamoto53515606/rm"],
             "featureList": [
-              "顔・ナンバープレートの自動検出",
-              "APIキー・トークン・パスワード・ローカルパスの検出",
+              "写真の顔の自動検出",
+              "スクリーンショットのAPIキー・トークン・パスワードの検出",
+              "ナンバープレートの検出",
               "矩形・楕円・多角形の手動マスク",
               "モザイク・ぼかし・黒塗り",
               "EXIF（GPS・撮影日時）の削除",
@@ -104,14 +105,14 @@
       </a>
       <span class="badge">PC専用</span>
       <span class="badge">既定は完全ローカル</span>
-      <span class="tagline">写真の顔・ナンバープレート・APIキーを隠すツール</span>
+      <span class="tagline">写真の顔とスクショのAPIキーを隠すツール</span>
       <div class="spacer"></div>
       <button class="link" id="btnHelp" type="button">使い方と安全性</button>
       <a class="link" href="./terms.html" target="_blank" rel="noopener">利用規約</a>
       <a class="link" href="./privacy.html" target="_blank" rel="noopener">プライバシー</a>
     </header>
 
-    <h1 class="sr-only">写真とスクリーンショットの顔・ナンバープレート・APIキーを、ブラウザ内だけで隠す無料ツール</h1>
+    <h1 class="sr-only">写真の顔とスクリーンショットのAPIキーを、ブラウザ内だけで隠す無料ツール</h1>
 
     <main class="layout">
       <!-- 左：写真一覧 -->
@@ -189,7 +190,7 @@
             </select>
           </label>
           <p class="note warn" id="externalWarning" hidden></p>
-          <p class="note" id="providerNote">自動検出は 顔・ナンバープレート・APIキー・氏名/連絡先・ユーザー名/パス などを探します。文字の検出には Ollama、またはローカルOCRを使います。</p>
+          <p class="note" id="providerNote">自動検出は 顔・APIキー・パスワード・ユーザー名/パス などを探します（ナンバープレートにも対応）。文字の検出には Ollama、またはローカルOCRを使います。</p>
 
           <div id="refineFields">
             <label class="check"><input type="checkbox" id="chkFaceRefine" checked /> 顔の枠をブラウザ検出で補正</label>
@@ -269,7 +270,7 @@
         <h2>使い方と安全性</h2>
         <ol>
           <li>写真をドラッグ＆ドロップ（または Ctrl+V）で追加します。</li>
-          <li>「自動検出」で顔・ナンバープレート・機密文字列に加え、ターミナルのユーザー名・ホスト名・フォルダパスも候補として出します。API キーはどちらのモードでも不要です。「文字も検出（OCR）」にチェックすると、APIキーなども無通信で探せます。</li>
+          <li>「自動検出」で顔・機密文字列に加え、ターミナルのユーザー名・ホスト名・フォルダパスも候補として出します（ナンバープレートにも対応。写真全体では小さいため、検出できない場合があります）。API キーはどちらのモードでも不要です。「文字も検出（OCR）」にチェックすると、APIキーなども無通信で探せます。</li>
           <li>枠をドラッグして位置と大きさを直します。四隅のハンドルでリサイズ、Delete で削除、Ctrl+Z で元に戻せます。</li>
           <li>「隠し方」を変えると背景のプレビューにすぐ反映されます。仕上がりを見て、確認済みにチェックします。</li>
           <li>「マスクして保存」で JPEG 書き出し（複数枚は ZIP）。</li>
@@ -295,13 +296,15 @@
       <div class="wrap">
         <h2>できること</h2>
         <p class="lead">
-          写真やスクリーンショットに写った<strong>顔・ナンバープレート・APIキー</strong>などを、画像を外部に送信せず
+          写真の<strong>顔</strong>と、スクリーンショットの<strong>APIキー・パスワード</strong>を、画像を外部に送信せず
           ブラウザ内で検出し、モザイク・ぼかし・黒塗りで隠せる無料のツールです。書き出した JPEG からは
-          EXIF（GPS・撮影日時・機種名）も削除します。
+          EXIF（GPS・撮影日時・機種名）も削除します。ナンバープレートにも対応していますが、
+          写真全体では小さいため検出できないことがあります。
         </p>
         <ul>
-          <li>顔とナンバープレートの自動検出（端末内の AI）</li>
-          <li>スクリーンショットの API キー・トークン・パスワード・秘密鍵・メールアドレス・IP アドレス・ローカルパス・端末プロンプトの検出（ローカル OCR）</li>
+          <li>写真の<strong>顔</strong>の自動検出（端末内の AI。集合写真の小さい顔も分割して再検出）</li>
+          <li>スクリーンショットの <strong>API キー・トークン・パスワード・秘密鍵</strong>・メールアドレス・IP アドレス・ローカルパス・端末プロンプトの検出（ローカル OCR）</li>
+          <li>ナンバープレートの検出（おまけ。明るく横長の領域を探し、番号が読めたときだけ隠します）</li>
           <li>矩形・楕円・多角形の手動マスク（移動・リサイズ・取り消し）</li>
           <li>隠し方: モザイク＋ぼかし / モザイク / ぼかし / 黒塗り</li>
           <li>複数枚の一括処理・ZIP 書き出し・EXIF 削除</li>
@@ -314,10 +317,11 @@
         </p>
         <p><a href="./hide-api-key.html">スクリーンショットの API キーを隠す手順（5 ステップ）→</a></p>
 
-        <h2>写真の顔・ナンバープレートを隠すには</h2>
+        <h2>写真の顔を隠すには</h2>
         <p>
-          ブラウザ内の顔検出（478 ランドマーク）が顔を、プレート検出がナンバープレートを枠で示します。
-          集合写真では小さい顔を分割して再検出します。検出した枠はドラッグで移動でき、四隅のハンドルで大きさを変えられます。
+          ブラウザ内の顔検出（478 ランドマーク）が顔を枠で示します。集合写真では小さい顔を分割して再検出します。
+          検出した枠はドラッグで移動でき、四隅のハンドルで大きさを変えられます。
+          ナンバープレートも、明るい横長の領域を探して番号が読めたときに枠で示します。
         </p>
 
         <h2>画像はサーバーに送られますか</h2>

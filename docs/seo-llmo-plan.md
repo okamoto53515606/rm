@@ -145,7 +145,7 @@ Sitemap: https://rm.okamomedia.tokyo/sitemap.xml
 
 ```html
 <title>写真・スクショの顔とAPIキーを隠す無料ツール｜rm</title>
-<meta name="description" content="顔・ナンバープレート・APIキー・パスワードを写真やスクショから自動検出し、モザイクや黒塗りで隠す無料ツール。画像はブラウザの外に出ず、EXIF（GPS）も削除。インストール不要。">
+<meta name="description" content="写真の顔と、スクショのAPIキー・パスワードを自動検出してモザイク・黒塗り。画像はブラウザの外に出ず、EXIF（GPS）も削除します。ナンバープレートにも対応。">
 ```
 
 - `rm` を先頭に置かない。`PC 専用` は description から外す（本文とバッジで伝える）。
