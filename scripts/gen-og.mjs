@@ -13,7 +13,7 @@ import { findChrome, ROOT } from './test-images-lib.mjs';
 const COPY = {
   mark: 'rm',
   lines: ['写真の顔・スクショの秘密を', 'ブラウザだけで隠す'],
-  pills: ['無通信', 'PC専用', 'MIT'],
+  pills: ['無通信', 'MIT'],
   url: 'rm.okamomedia.tokyo',
 };
 

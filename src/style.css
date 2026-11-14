@@ -628,8 +628,7 @@ button.primary.danger { background: var(--danger); color: #14090a; }
 }
 
 /* ---------- 狭い画面（1 カラム） ---------- */
-/* PC 向けのツールだが、スマホで開いたときに横スクロールで
-   何も見えない状態を避けるため、縦に積む。 */
+/* 狭い画面で横スクロールになり、何も見えない状態を避けるため縦に積む。 */
 @media (max-width: 900px) {
   html,
   body { height: auto; }
