@@ -397,12 +397,14 @@ function detectionsFromLandmarks(
 }
 
 /**
- * 小さい顔が写っている＝集合写真の可能性が高いときだけ、2x2 タイルで検出する。
+ * 小さい顔が写っている＝集合写真の可能性が高いときだけ、分割して検出する。
  * 1024px に縮小した全体像では、集合写真の顔は数十pxになり検出器が落とすため。
+ * 全体で 0 件の場合も、大きい画像なら 3x3 で分割して拾い直す（引きの写真では
+ * 1024px でも 2x2 でも 1 人も取れないことがある）。
  */
 function needsTiledFaces(raster: Raster, faces: Detection[]): boolean {
   if (Math.max(raster.width, raster.height) < 1600) return false;
-  if (!faces.length) return false;
+  if (!faces.length) return true;
   return Math.min(...faces.map((f) => f.box.w)) < 0.2;
 }
 
@@ -413,15 +415,23 @@ function withTiledFaces(
   landmarker: FaceLandmarkerLike,
 ): Detection[] {
   if (!needsTiledFaces(raster, faces)) return dedupe(faces);
-  return dedupe([...faces, ...detectFacesTiled(raster, landmarker)]);
+  // 顔が 1 件も取れなかったときは、より細かい 3x3 で拾い直す。
+  // この検出器は「画面に占める顔の割合」で当たり外れが決まるため、
+  // 引きの写真では 2x2 でも足りない（実測: 幅の 7% 前後の顔は 2x2 で 0 件）。
+  const grid = faces.length ? 2 : 3;
+  return dedupe([...faces, ...detectFacesTiled(raster, landmarker, grid)]);
 }
 
-function detectFacesTiled(raster: Raster, landmarker: FaceLandmarkerLike): Detection[] {
+function detectFacesTiled(
+  raster: Raster,
+  landmarker: FaceLandmarkerLike,
+  grid = 2,
+  overlap = 0.15,
+): Detection[] {
   const W = raster.width;
   const H = raster.height;
-  const cols = 2;
-  const rows = 2;
-  const overlap = 0.15;
+  const cols = grid;
+  const rows = grid;
   const tw = W / (cols - (cols - 1) * overlap);
   const th = H / (rows - (rows - 1) * overlap);
   const found: Detection[] = [];
@@ -467,7 +477,8 @@ async function detectFacesLocal(raster: Raster): Promise<Detection[]> {
       return withTiledFaces(raster, retry, cpu);
     }
   }
-  return [];
+  // 1024px で 0 件でも、大きい画像なら分割して拾い直す
+  return withTiledFaces(raster, [], landmarker);
 }
 
 // ===== 入口 =====

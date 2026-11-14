@@ -424,7 +424,10 @@ export class App {
             (added === 0
               ? notes.filter((m) => /プレート|読み込め|失敗|エラー/.test(m)).pop()
               : undefined);
-          const summary = `${added} か所を追加しました（顔 ${tally('face')}・プレート ${tally('plate')}・文字 ${tally('secret')}）`;
+          const summary =
+            added === 0
+              ? '0 か所でした。集合写真や引きの写真は顔が小さいと検出されないことがあります。手動で枠を追加してください'
+              : `${added} か所を追加しました（顔 ${tally('face')}・プレート ${tally('plate')}・文字 ${tally('secret')}）`;
           this.setDetectStatus(
             detail ? `${summary} / ${detail}` : summary,
             warn ? 'error' : 'ok',

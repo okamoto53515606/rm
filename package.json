@@ -1,7 +1,7 @@
 {
   "name": "rm",
   "private": true,
-  "version": "1.1.10",
+  "version": "1.1.11",
   "type": "module",
   "description": "写真の顔と、スクリーンショットの API キー・パスワードをブラウザ内で隠すツール（ナンバープレートにも対応）",
   "license": "MIT",
@@ -13,7 +13,8 @@
     "test:eval": "node scripts/eval.mjs",
     "test:eval:gen": "node scripts/gen-test-images.mjs",
     "test:compare": "node scripts/compare.mjs",
-    "gen:og": "node scripts/gen-og.mjs"
+    "gen:og": "node scripts/gen-og.mjs",
+    "test:faces": "node scripts/face-regress.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.2.2",
