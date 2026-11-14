@@ -202,18 +202,21 @@ function supportsCanvasFilter(): boolean {
   return canvasFilterSupported;
 }
 
-/** 縮小→拡大でぼかす（ctx.filter が使えない環境向けの代替） */
+/**
+ * 縮小→拡大でぼかす（ctx.filter が使えない環境向けの代替）。
+ * 元画像ではなく「すでに描かれている内容」を取り込む。
+ * そうしないと、モザイクの後に元画像を薄くぼかして重ねることになり、
+ * モザイクが消えて「薄いぼかし」になってしまう（＝隠れない）。
+ */
 function softBlurRegion(
   ctx: CanvasRenderingContext2D,
-  raster: Raster,
   x: number,
   y: number,
   w: number,
   h: number,
-  scale: number,
   radius: number,
 ): void {
-  const k = clamp(Math.round(radius / 3), 3, 14);
+  const k = clamp(Math.round(radius / 3), 4, 16);
   const tw = Math.max(1, Math.round(w / k));
   const th = Math.max(1, Math.round(h / k));
   const tmp = document.createElement('canvas');
@@ -223,7 +226,7 @@ function softBlurRegion(
   if (!tctx) return;
   tctx.imageSmoothingEnabled = true;
   tctx.imageSmoothingQuality = 'high';
-  tctx.drawImage(raster, x / scale, y / scale, w / scale, h / scale, 0, 0, tw, th);
+  tctx.drawImage(ctx.canvas, x, y, w, h, 0, 0, tw, th);
 
   const prevSmoothing = ctx.imageSmoothingEnabled;
   const prevQuality = ctx.imageSmoothingQuality;
@@ -241,7 +244,6 @@ function blurRegion(
   y: number,
   w: number,
   h: number,
-  scale: number,
   outW: number,
   outH: number,
   minSide: number,
@@ -253,9 +255,10 @@ function blurRegion(
     ctx.filter = 'none';
     return;
   }
-  // ctx.filter が効かない環境では、マスク範囲だけを縮小→拡大してぼかす。
-  // （全体画像を描くと、鮮明な元画像でマスクが上書きされてしまう）
-  softBlurRegion(ctx, raster, x, y, w, h, scale, radius);
+  // ctx.filter が効かない環境では、マスク範囲を縮小→拡大してぼかす。
+  // 元画像ではなく「現在のキャンバス内容」をぼかすので、
+  // 全体画像で上書きしたり、モザイクを消したりすることがない。
+  softBlurRegion(ctx, x, y, w, h, radius);
 }
 
 function applyMask(
@@ -286,12 +289,12 @@ function applyMask(
       pixelate(ctx, raster, x, y, w, h, scale, minSide);
       break;
     case 'blur':
-      blurRegion(ctx, raster, x, y, w, h, scale, outW, outH, minSide);
+      blurRegion(ctx, raster, x, y, w, h, outW, outH, minSide);
       break;
     case 'mosaic+blur':
     default:
       pixelate(ctx, raster, x, y, w, h, scale, minSide);
-      blurRegion(ctx, raster, x, y, w, h, scale, outW, outH, minSide);
+      blurRegion(ctx, raster, x, y, w, h, outW, outH, minSide);
       break;
   }
   ctx.restore();
