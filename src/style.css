@@ -477,6 +477,25 @@ button.wide { width: 100%; }
 .note.ok { color: var(--ok); }
 .note.warn { color: var(--warn); }
 
+/* 0 件だったことを見逃さないように、注意喚起だけ枠で囲む */
+.note.alert {
+  padding: 8px 10px;
+  border: 1px solid rgba(124, 156, 255, 0.4);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent-weak);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.note.alert.error {
+  border-color: rgba(255, 107, 107, 0.45);
+  border-left-color: var(--danger);
+  background: rgba(255, 107, 107, 0.1);
+}
+
 .tips ul {
   margin: 0;
   padding-left: 16px;

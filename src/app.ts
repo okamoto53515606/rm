@@ -409,29 +409,23 @@ export class App {
         doc.verified = false;
         const tally = (category: Detection['category']): number =>
           found.filter((x) => x.category === category).length;
-        if (added === 0 && !settings.ocr) {
-          // プレート・機密文字列は OCR 経路でのみ検出する
-          this.setDetectStatus(
-            '0 か所でした。「文字も検出（OCR）」をONにすると、ナンバープレートや API キーも探します',
+        if (added === 0) {
+          // 何も見つからなかったことは見逃されやすいので、目立つ表示で案内する。
+          // 顔の検出は 100% ではないため、OCR の有無にかかわらず手動追加を促す。
+          const warn = notes.find(
+            (m) => m.includes('読み込めませんでした') || m.includes('失敗') || m.includes('エラー'),
           );
+          const detail = warn ?? notes.filter((m) => /プレート|読み込め|失敗|エラー/.test(m)).pop();
+          const message = settings.ocr
+            ? '0 か所でした。集合写真や引きの写真は顔が小さいと検出されないことがあります。\n手動で枠を追加してください'
+            : '0 か所でした。顔が見つからないときは手動で枠を追加してください。\n「文字も検出（OCR）」をONにすると、ナンバープレートや API キーも探します';
+          this.setDetectStatus(detail ? `${message}\n${detail}` : message, warn ? 'alert error' : 'alert');
         } else {
           const warn = notes.find(
             (m) => m.includes('読み込めませんでした') || m.includes('失敗') || m.includes('エラー'),
           );
-          // 0 件のときは、どこで止まったか（プレート候補が見つからない等）も添える
-          const detail =
-            warn ??
-            (added === 0
-              ? notes.filter((m) => /プレート|読み込め|失敗|エラー/.test(m)).pop()
-              : undefined);
-          const summary =
-            added === 0
-              ? '0 か所でした。集合写真や引きの写真は顔が小さいと検出されないことがあります。手動で枠を追加してください'
-              : `${added} か所を追加しました（顔 ${tally('face')}・プレート ${tally('plate')}・文字 ${tally('secret')}）`;
-          this.setDetectStatus(
-            detail ? `${summary} / ${detail}` : summary,
-            warn ? 'error' : 'ok',
-          );
+          const summary = `${added} か所を追加しました（顔 ${tally('face')}・プレート ${tally('plate')}・文字 ${tally('secret')}）`;
+          this.setDetectStatus(summary, warn ? 'error' : 'ok');
         }
         if (doc.id === this.currentId) {
           this.editor.refresh();
@@ -616,7 +610,7 @@ export class App {
     this.dom.statusText.textContent = text;
   }
 
-  private setDetectStatus(text: string, kind?: 'ok' | 'error'): void {
+  private setDetectStatus(text: string, kind?: 'ok' | 'error' | 'alert' | 'alert error'): void {
     this.dom.detectStatus.textContent = text;
     this.dom.detectStatus.className = 'note' + (kind ? ` ${kind}` : '');
   }
