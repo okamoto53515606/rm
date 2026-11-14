@@ -61,6 +61,12 @@ try {
       li.querySelector('.sub')?.textContent?.trim(),
     ),
     ua: navigator.userAgent,
+    // どの WASM コア・言語データが読まれたか（文字列は含めない）
+    resources: performance
+      .getEntriesByType('resource')
+      .map((e) => e.name)
+      .filter((n) => /tesseract-core|traineddata/.test(n))
+      .map((n) => n.split('/').slice(-2).join('/')),
   }));
 
   console.log(`[${engineName}] ${file}`);
@@ -68,6 +74,7 @@ try {
   console.log(`  status: ${result.status}`);
   console.log(`  detail: ${result.detail}`);
   console.log(`  写真: ${JSON.stringify(result.items)}`);
+  console.log(`  資源: ${JSON.stringify(result.resources)}`);
   for (const e of errors.slice(0, 8)) console.log(`  x ${e.slice(0, 220)}`);
 } finally {
   await browser.close();

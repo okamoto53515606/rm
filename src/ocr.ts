@@ -362,7 +362,7 @@ function clampBox(box: Box): Box {
  * その窓を横・縦に広げてプレート全体の矩形を求める。
  * 見つかった領域を除外しながら繰り返すことで、1枚に複数台写っていても拾う。
  */
-function findPlateRegions(raster: Raster, max = 4): Box[] {
+function findPlateRegions(raster: Raster, max = 4, minScore = 0.55): Box[] {
   const width = raster.width;
   const height = raster.height;
   const sw = HOTSPOT_WIDTH;
@@ -421,7 +421,7 @@ function findPlateRegions(raster: Raster, max = 4): Box[] {
         }
       }
     }
-    if (seed.score < 0.55) break;
+    if (seed.score < minScore) break;
 
     // 種の帯の中で、白い列が続く範囲まで左右に広げる＝プレートの横幅
     const bandY0 = seed.y;
@@ -553,7 +553,17 @@ async function detectPlatesInPhoto(
   onProgress?: Progress,
   confirmedLines: Box[] = [],
 ): Promise<Detection[]> {
-  const regions = findPlateRegions(raster);
+  let regions = findPlateRegions(raster);
+  if (!regions.length) {
+    // ブラウザや写真によっては、色管理や縮小の違いで白さのスコアが少し下がる。
+    // 候補が0件のときだけしきい値を下げて拾い直す（番号が読めたときだけ採用するので誤検出は増えない）。
+    regions = findPlateRegions(raster, 2, 0.42);
+  }
+  onProgress?.(
+    regions.length
+      ? `プレート候補 ${regions.length} 件を確認中…`
+      : 'プレート候補は見つかりませんでした',
+  );
   if (!regions.length) return [];
 
   const out: Detection[] = [];

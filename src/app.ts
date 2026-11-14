@@ -418,8 +418,17 @@ export class App {
           const warn = notes.find(
             (m) => m.includes('読み込めませんでした') || m.includes('失敗') || m.includes('エラー'),
           );
+          // 0 件のときは、どこで止まったか（プレート候補が見つからない等）も添える
+          const detail =
+            warn ??
+            (added === 0
+              ? notes.filter((m) => /プレート|読み込め|失敗|エラー/.test(m)).pop()
+              : undefined);
           const summary = `${added} か所を追加しました（顔 ${tally('face')}・プレート ${tally('plate')}・文字 ${tally('secret')}）`;
-          this.setDetectStatus(warn ? `${summary} / ${warn}` : summary, warn ? 'error' : 'ok');
+          this.setDetectStatus(
+            detail ? `${summary} / ${detail}` : summary,
+            warn ? 'error' : 'ok',
+          );
         }
         if (doc.id === this.currentId) {
           this.editor.refresh();
